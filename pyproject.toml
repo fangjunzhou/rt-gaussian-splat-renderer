@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "taichi>=1.7.3",
+]
 
 [build-system]
 requires = ["hatchling"]
