@@ -20,10 +20,12 @@ dev = [
     "myst-parser[linkify]>=4.0.1",
     "taskipy>=1.14.1",
     "furo>=2024.8.6",
+    "pytest>=8.3.4",
 ]
 
 [tool.pyright]
 reportInvalidTypeForm = false
+reportAttributeAccessIssue = false
 
 [tool.taskipy.tasks]
 docs = "task docs-build & task docs-host && kill $!"
