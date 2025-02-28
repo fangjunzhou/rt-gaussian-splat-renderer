@@ -22,6 +22,9 @@ dev = [
     "furo>=2024.8.6",
 ]
 
+[tool.pyright]
+reportInvalidTypeForm = false
+
 [tool.taskipy.tasks]
 docs = "task docs-build & task docs-host && kill $!"
 docs-build = "watchfiles 'make -C docs/ html' docs/source src"
