@@ -6,8 +6,23 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "taichi>=1.7.3",
+    "watchfiles>=1.0.4",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "sphinx>=8.2.1",
+    "sphinx-autodoc2>=0.5.0",
+    "myst-parser[linkify]>=4.0.1",
+    "taskipy>=1.14.1",
+    "furo>=2024.8.6",
+]
+
+[tool.taskipy.tasks]
+docs = "task docs-build & task docs-host && kill $!"
+docs-build = "watchfiles 'make -C docs/ html' docs/source src"
+docs-host = "python -m http.server 8080 -d docs/build/html"
