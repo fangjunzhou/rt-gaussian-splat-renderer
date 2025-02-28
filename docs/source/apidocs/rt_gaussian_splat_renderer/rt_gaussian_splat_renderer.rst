@@ -13,4 +13,6 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
+   rt_gaussian_splat_renderer.ray
+   rt_gaussian_splat_renderer.camera
    rt_gaussian_splat_renderer.__main__
