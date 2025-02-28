@@ -24,7 +24,6 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Build Documentation
-        working-directory: doc
         run: uv run make -C docs/ html
 
       - name: Upload Documentation Artifact
