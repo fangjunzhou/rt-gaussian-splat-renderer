@@ -14,3 +14,7 @@ class Ray:
     dir: ti.math.vec3
     start: ti.f32
     end: ti.f32
+
+
+    def get(self, t):
+        return self.origin + t * self.direction
