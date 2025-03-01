@@ -26,6 +26,7 @@ dev = [
 [tool.pyright]
 reportInvalidTypeForm = false
 reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
 
 [tool.taskipy.tasks]
 docs = "task docs-build & task docs-host && kill $!"
