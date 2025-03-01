@@ -1,4 +1,5 @@
 import taichi as ti
+ti.init(arch=ti.vulkan)
 
 @ti.dataclass
 class Ray:
@@ -10,11 +11,19 @@ class Ray:
     :param end: the maximun t for raycast, this should be set to ti.math.inf 
         for camera rays.
     """
-    origin: ti.math.vec3
-    dir: ti.math.vec3
-    start: ti.f32
-    end: ti.f32
+    def __init__(self, origin, direction):
+        self.origin = origin
+        self.direction = direction
+        self.start = 0.0
+        self.end = float('inf')
 
+    # @staticmethod
+    # def field(shape):
+    #     return ti.Struct.field({
+    #         "origin": ti.types.vector(3, ti.f32),
+    #         "direction": ti.types.vector(3, ti.f32),
+    #     }, shape=shape)
 
     def get(self, t):
         return self.origin + t * self.direction
+    
