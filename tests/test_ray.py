@@ -51,6 +51,7 @@ def test_ray_field():
 
 
 def test_ray_eval():
+    """Test Ray.get method."""
     SIZE = (4, 4)
     ray_field = Ray.field(shape=SIZE)
 
