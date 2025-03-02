@@ -116,3 +116,38 @@ def test_rot_vec3():
     q2 = ker_from_axis_angle(r2)
     v2 = ker_rot_vec(q2, v)
     assert ker_length(v2 - ti.math.vec3(0, 0, -1)) == pytest.approx(0, abs=1e-6)
+
+
+def test_as_rotation_mat4():
+    """Test quaternion to 4x4 rotation matrix"""
+    @ti.kernel
+    def ker_rand_quat() -> ti.math.vec4:
+        x = ti.random(ti.f32)
+        y = ti.random(ti.f32)
+        z = ti.random(ti.f32)
+        w = ti.random(ti.f32)
+        return ti.math.normalize(ti.math.vec4(x, y, z, w))
+
+    @ti.kernel
+    def ker_quat_to_mat4(q: ti.math.vec4) -> ti.math.mat4:
+        return quat.as_rotation_mat4(q)
+
+    @ti.kernel
+    def ker_rot_with_mat4(m: ti.math.mat4, v: ti.math.vec3) -> ti.math.vec3:
+        return (m @ ti.math.vec4(v.x, v.y, v.z, 1)).xyz
+
+    @ti.kernel
+    def ker_rot_vec(q: ti.math.vec4, v: ti.math.vec3) -> ti.math.vec3:
+        return quat.rot_vec3(q, v)
+
+    @ti.kernel
+    def ker_length(v: ti.template()) -> ti.f32:
+        return ti.math.length(v)
+
+    # Rotate (1, 0, 0) by a random quaternion.
+    v = ti.math.vec3(1, 0, 0)
+    q = ker_rand_quat()
+    v_ref = ker_rot_vec(q, v)
+    m = ker_quat_to_mat4(q)
+    v = ker_rot_with_mat4(m, v)
+    assert ker_length(v - v_ref) == pytest.approx(0, abs=1e-6)

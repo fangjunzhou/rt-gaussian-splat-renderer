@@ -1,5 +1,5 @@
 """
-Quaternion Taichi utils functions
+Quaternion utils functions in Taichi.
 """
 
 import taichi as ti
@@ -97,14 +97,26 @@ def rot_vec3(q, v):
 
 
 @ti.func
-def as_rotation_matrix(quat):
+def as_rotation_mat4(q):
     """Convert a vec4 quaternion to a 4x4 rotation matrix in homogeneous
     coordinate.
 
-    :param quat: a normalized quaternion.
-    :type quat: ti.math.vec4
+    :param q: a normalized quaternion.
+    :type q: ti.math.vec4
     :return: a 4x4 rotation matrix in homogeneous coordinate.
     :rtype: ti.math.mat4
     """
-    # TODO: Implement quaternion to rotation matrix.
-    return ti.math.eye(4)
+    mx = mul(q, mul(ti.math.vec4(1, 0, 0, 0), conj(q)))
+    my = mul(q, mul(ti.math.vec4(0, 1, 0, 0), conj(q)))
+    mz = mul(q, mul(ti.math.vec4(0, 0, 1, 0), conj(q)))
+    m = ti.math.eye(4)
+    m[0, 0] = mx.x
+    m[1, 0] = mx.y
+    m[2, 0] = mx.z
+    m[0, 1] = my.x
+    m[1, 1] = my.y
+    m[2, 1] = my.z
+    m[0, 2] = mz.x
+    m[1, 2] = mz.y
+    m[2, 2] = mz.z
+    return m
