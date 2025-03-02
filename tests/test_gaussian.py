@@ -1,0 +1,51 @@
+import taichi as ti
+import logging
+import numpy as np
+import quaternion as quat
+
+from rt_gaussian_splat_renderer.gaussian import Gaussian, new_gaussian
+
+logger = logging.getLogger(__name__)
+
+# Init taichi runtime.
+ti.init(arch=ti.gpu, random_seed=42)
+logger.info(f"Current Taichi backend: {ti.cfg.arch}")  # pyright: ignore
+
+
+def test_new_gaussian():
+    """Test python scope Gaussian constructor."""
+    # Default gaussian.
+    gaussian = new_gaussian()
+    assert gaussian.position == ti.math.vec3(0)
+    assert gaussian.rotation == ti.math.vec4(0, 0, 0, 1)
+    assert gaussian.scale == ti.math.vec3(1, 1, 1)
+    # Custom gaussian.
+    prosition = ti.math.vec3(1, 2, 3)
+    q = quat.from_euler_angles([np.pi / 4, 0, 0])
+    logger.info(f"Rotation quaternion: {q}")
+    rotation = ti.math.vec4(quat.as_float_array(q))
+    scale = ti.math.vec3(2, 3, 4)
+    gaussian = new_gaussian(prosition, rotation, scale)
+    assert gaussian.position == ti.math.vec3(1, 2, 3)
+    assert gaussian.rotation == ti.math.vec4(quat.as_float_array(q))
+    assert gaussian.scale == ti.math.vec3(2, 3, 4)
+
+
+def test_gaussian_field():
+    """Test the Gaussian field generation."""
+    SIZE = (32,)
+    # Taichi scope initialization.
+    gaussian_field = Gaussian.field(shape=SIZE)
+    assert gaussian_field.shape == SIZE
+    assert gaussian_field[0].position == ti.math.vec3(0)
+    assert gaussian_field[0].rotation == ti.math.vec4(0)
+    assert gaussian_field[0].scale == ti.math.vec3(0)
+
+    @ti.kernel
+    def init_gaussian_field():
+        for I in ti.grouped(gaussian_field):
+            gaussian_field[I].init()
+    init_gaussian_field()
+    assert gaussian_field[0].position == ti.math.vec3(0)
+    assert gaussian_field[0].rotation == ti.math.vec4(1, 0, 0, 0)
+    assert gaussian_field[0].scale == ti.math.vec3(1, 1, 1)
