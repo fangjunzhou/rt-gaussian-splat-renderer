@@ -15,4 +15,5 @@ We implemented following quaternion math in Taichi:
 - [`inv`](#rt_gaussian_splat_renderer.utils.quaternion.inv)
 - [`from_axis_angle`](#rt_gaussian_splat_renderer.utils.quaternion.from_axis_angle)
 - [`as_axis_angle`](#rt_gaussian_splat_renderer.utils.quaternion.as_axis_angle)
-- [`as_rotation_matrix`](#rt_gaussian_splat_renderer.utils.quaternion.as_rotation_matrix)
+- [`rot_vec3`](#rt_gaussian_splat_renderer.utils.quaternion.rot_vec3)
+- [`as_rotation_mat4`](#rt_gaussian_splat_renderer.utils.quaternion.as_rotation_mat4)
