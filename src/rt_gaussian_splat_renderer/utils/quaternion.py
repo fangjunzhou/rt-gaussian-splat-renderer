@@ -82,6 +82,21 @@ def as_axis_angle(q):
 
 
 @ti.func
+def rot_vec3(q, v):
+    """Rotate a vector v using a quaternion q.
+
+    :param q: quaternion q.
+    :type q: ti.math.vec4
+    :param v: vector v.
+    :type v: ti.math.vec3
+    :return: the rotated vector v using quaternion q (as $q\\vec{v}q^{*}$).
+    :rtype: ti.math.vec3
+    """
+    qv = ti.math.vec4(v.x, v.y, v.z, 0)
+    return mul(q, mul(qv, conj(q))).xyz
+
+
+@ti.func
 def as_rotation_matrix(quat):
     """Convert a vec4 quaternion to a 4x4 rotation matrix in homogeneous
     coordinate.
