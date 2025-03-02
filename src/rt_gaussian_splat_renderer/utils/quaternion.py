@@ -84,7 +84,7 @@ def as_axis_angle(q):
 @ti.func
 def as_rotation_matrix(quat):
     """Convert a vec4 quaternion to a 4x4 rotation matrix in homogeneous
-        coordinate.
+    coordinate.
 
     :param quat: a normalized quaternion.
     :type quat: ti.math.vec4

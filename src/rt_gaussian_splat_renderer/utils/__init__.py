@@ -1,3 +1,3 @@
 """
-Util functions in Python and Taichi scope
+Util functions in Python and Taichi scope.
 """

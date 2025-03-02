@@ -1,5 +1,5 @@
 """
-Gaussian struct in Taichi
+Gaussian struct in Taichi.
 """
 
 import taichi as ti
