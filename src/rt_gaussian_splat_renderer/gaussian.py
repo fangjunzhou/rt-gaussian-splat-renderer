@@ -1,3 +1,7 @@
+"""
+Gaussian struct in Taichi
+"""
+
 import taichi as ti
 
 
@@ -16,7 +20,7 @@ class Gaussian:
     @ti.func
     def init(self,
              position=ti.math.vec3(0, 0, 0),
-             rotation=ti.math.vec4(1, 0, 0, 0),
+             rotation=ti.math.vec4(0, 0, 0, 1),
              scale=ti.math.vec3(1, 1, 1)):
         """Taichi scope Gaussian initialization method.
 
@@ -33,7 +37,7 @@ class Gaussian:
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
-                 rotation: ti.math.vec4 = ti.math.vec4(1, 0, 0, 0),
+                 rotation: ti.math.vec4 = ti.math.vec4(0, 0, 0, 1),
                  scale: ti.math.vec3 = ti.math.vec3(1, 1, 1)) -> Gaussian:
     """Python scope Gaussian constructor to create a new Gaussian.
 

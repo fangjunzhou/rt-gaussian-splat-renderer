@@ -22,6 +22,8 @@ def test_new_gaussian():
     # Custom gaussian.
     prosition = ti.math.vec3(1, 2, 3)
     q = quat.from_euler_angles([np.pi / 4, 0, 0])
+    # NOTE: Convert scalar-first to scalar-last representation.
+    q.z, q.w = q.w, q.z
     logger.info(f"Rotation quaternion: {q}")
     rotation = ti.math.vec4(quat.as_float_array(q))
     scale = ti.math.vec3(2, 3, 4)
@@ -47,5 +49,5 @@ def test_gaussian_field():
             gaussian_field[I].init()
     init_gaussian_field()
     assert gaussian_field[0].position == ti.math.vec3(0)
-    assert gaussian_field[0].rotation == ti.math.vec4(1, 0, 0, 0)
+    assert gaussian_field[0].rotation == ti.math.vec4(0, 0, 0, 1)
     assert gaussian_field[0].scale == ti.math.vec3(1, 1, 1)
