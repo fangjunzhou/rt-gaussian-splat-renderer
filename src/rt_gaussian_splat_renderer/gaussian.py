@@ -18,13 +18,16 @@ class Gaussian:
     rotation: ti.math.vec4
     scale: ti.math.vec3
 
-    # TODO: Implement Gaussian color and SH.
+    color: ti.math.vec3
+
+    # TODO: Implement spherical harmonics.
 
     @ti.func
     def init(self,
              position=ti.math.vec3(0, 0, 0),
              rotation=ti.math.vec4(0, 0, 0, 1),
-             scale=ti.math.vec3(1, 1, 1)):
+             scale=ti.math.vec3(1, 1, 1),
+             color=ti.math.vec3(1, 0, 1)):
         """Taichi scope Gaussian initialization method.
 
         :param position: gaussian center (mean).
@@ -33,10 +36,13 @@ class Gaussian:
         :type rotation: ti.math.vec4
         :param scale: gaussian scale.
         :type scale: ti.math.vec3
+        :param color: gaussian base color.
+        :type color: ti.math.vec3
         """
         self.position = position
         self.rotation = rotation
         self.scale = scale
+        self.color = color
 
     @ti.func
     def cov(self):
@@ -59,12 +65,14 @@ class Gaussian:
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
                  rotation: ti.math.vec4 = ti.math.vec4(0, 0, 0, 1),
-                 scale: ti.math.vec3 = ti.math.vec3(1, 1, 1)) -> Gaussian:
+                 scale: ti.math.vec3 = ti.math.vec3(1, 1, 1),
+                 color: ti.math.vec3 = ti.math.vec3(1, 0, 1)) -> Gaussian:
     """Python scope Gaussian constructor to create a new Gaussian.
 
     :param position: gaussian center (mean).
     :param rotation: gaussian rotation quaternion.
     :param scale: gaussian scale.
+    :param color: gaussian base color.
     :return: a Gaussian dataclass.
     """
-    return Gaussian(position, rotation, scale)
+    return Gaussian(position, rotation, scale, color)
