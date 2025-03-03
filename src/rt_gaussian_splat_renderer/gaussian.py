@@ -18,6 +18,8 @@ class Gaussian:
     rotation: ti.math.vec4
     scale: ti.math.vec3
 
+    # TODO: Implement Gaussian color and SH.
+
     @ti.func
     def init(self,
              position=ti.math.vec3(0, 0, 0),
