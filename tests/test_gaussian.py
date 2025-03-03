@@ -20,6 +20,7 @@ def test_new_gaussian():
     assert gaussian.rotation == ti.math.vec4(0, 0, 0, 1)
     assert gaussian.scale == ti.math.vec3(1, 1, 1)
     assert gaussian.color == ti.math.vec3(1, 0, 1)
+    assert gaussian.opacity == 1
     # Custom gaussian.
     prosition = ti.math.vec3(1, 2, 3)
     q = quat.from_euler_angles([np.pi / 4, 0, 0])
@@ -29,11 +30,12 @@ def test_new_gaussian():
     rotation = ti.math.vec4(quat.as_float_array(q))
     scale = ti.math.vec3(2, 3, 4)
     color = ti.math.vec3(1, 0, 0)
-    gaussian = new_gaussian(prosition, rotation, scale, color)
+    gaussian = new_gaussian(prosition, rotation, scale, color, 0.75)
     assert gaussian.position == ti.math.vec3(1, 2, 3)
     assert gaussian.rotation == ti.math.vec4(quat.as_float_array(q))
     assert gaussian.scale == ti.math.vec3(2, 3, 4)
     assert gaussian.color == ti.math.vec3(1, 0, 0)
+    assert gaussian.opacity == 0.75
 
 
 def test_gaussian_field():
@@ -46,6 +48,7 @@ def test_gaussian_field():
     assert gaussian_field[0].rotation == ti.math.vec4(0)
     assert gaussian_field[0].scale == ti.math.vec3(0)
     assert gaussian_field[0].color == ti.math.vec3(0)
+    assert gaussian_field[0].opacity == 0
 
     @ti.kernel
     def init_gaussian_field():
@@ -56,3 +59,4 @@ def test_gaussian_field():
     assert gaussian_field[0].rotation == ti.math.vec4(0, 0, 0, 1)
     assert gaussian_field[0].scale == ti.math.vec3(1, 1, 1)
     assert gaussian_field[0].color == ti.math.vec3(1, 0, 1)
+    assert gaussian_field[0].opacity == 1

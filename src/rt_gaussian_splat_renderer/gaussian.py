@@ -19,6 +19,7 @@ class Gaussian:
     scale: ti.math.vec3
 
     color: ti.math.vec3
+    opacity: ti.f32
 
     # TODO: Implement spherical harmonics.
 
@@ -27,7 +28,8 @@ class Gaussian:
              position=ti.math.vec3(0, 0, 0),
              rotation=ti.math.vec4(0, 0, 0, 1),
              scale=ti.math.vec3(1, 1, 1),
-             color=ti.math.vec3(1, 0, 1)):
+             color=ti.math.vec3(1, 0, 1),
+             opacity=1):
         """Taichi scope Gaussian initialization method.
 
         :param position: gaussian center (mean).
@@ -38,11 +40,14 @@ class Gaussian:
         :type scale: ti.math.vec3
         :param color: gaussian base color.
         :type color: ti.math.vec3
+        :param opacity: gaussian opacity.
+        :type opacity: ti.f32
         """
         self.position = position
         self.rotation = rotation
         self.scale = scale
         self.color = color
+        self.opacity = opacity
 
     @ti.func
     def cov(self):
@@ -66,13 +71,15 @@ class Gaussian:
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
                  rotation: ti.math.vec4 = ti.math.vec4(0, 0, 0, 1),
                  scale: ti.math.vec3 = ti.math.vec3(1, 1, 1),
-                 color: ti.math.vec3 = ti.math.vec3(1, 0, 1)) -> Gaussian:
+                 color: ti.math.vec3 = ti.math.vec3(1, 0, 1),
+                 opacity: ti.f32 = 1) -> Gaussian:
     """Python scope Gaussian constructor to create a new Gaussian.
 
     :param position: gaussian center (mean).
     :param rotation: gaussian rotation quaternion.
     :param scale: gaussian scale.
     :param color: gaussian base color.
+    :param opacity: gaussian opacity.
     :return: a Gaussian dataclass.
     """
-    return Gaussian(position, rotation, scale, color)
+    return Gaussian(position, rotation, scale, color, opacity)
