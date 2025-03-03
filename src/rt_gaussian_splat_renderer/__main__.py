@@ -1,3 +1,7 @@
+import taichi as ti
+import math
+
+
 def main():
     print("Hello World!")
 
