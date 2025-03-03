@@ -2,7 +2,8 @@ import taichi as ti
 import math
 from typing import Tuple
 
-from rt_gaussian_splat_renderer.ray import Ray
+from rt_gaussian_splat_renderer.ray import Ray, new_ray
+from rt_gaussian_splat_renderer.utils.quaternion import rot_vec3
 
 
 @ti.data_oriented
@@ -18,25 +19,10 @@ class Camera:
             rotation: ti.math.vec4,
             censor_size: ti.math.vec2,
             focal_length: ti.math.vec2):
-        # Did not implement rotation yet!
-        # h = math.tan(math.radians(vert_fov) / 2.0)
-        # v_height = 2.0 * h
-        # v_width = v_height * aspect_ratio
-
-        # direction = (looking_at - position).normalized()
-        # dir=rot.rotate(direction)
-        # looking_at = position + dir
-
-        # w = (position - looking_at).normalized()
-        # self.u = up.cross(w).normalized()
-        # self.v = w.cross(self.u)
-        #
-        # self.origin = position
-        # self.horizontal = v_width * self.u
-        # self.vertical = v_height * self.v
-        # self.lower_left_corner = self.origin - \
-        #     (self.horizontal / 2.0) - (self.vertical / 2.0) - w
-        pass
+        self.position = position
+        self.rotation = rotation
+        self.censor_size = censor_size
+        self.focal_length = focal_length
 
     @ti.func
     def generate_ray(self, u, v):
@@ -51,6 +37,12 @@ class Camera:
         :return: camera ray.
         :rtype: Ray
         """
-        # return self.origin, self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin
-        # TODO: Implement camera ray.
-        return Ray()
+        px = (self.censor_size.x*u - 0.5*self.censor_size.x) / self.focal_length.x 
+        py = (self.censor_size.y*v - 0.5*self.censor_size.y) / self.focal_length.y
+        pz = -1
+
+        dir_camera = ti.math.vec3(px, py, pz)
+        dir_camera = ti.math.normalize(dir_camera)
+
+        dir_world = rot_vec3(self.rotation, dir_camera)
+        return new_ray(self.position, dir_world)
