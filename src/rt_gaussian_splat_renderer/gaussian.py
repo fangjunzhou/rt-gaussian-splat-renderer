@@ -8,7 +8,7 @@ import rt_gaussian_splat_renderer.utils.quaternion as quat
 
 @ti.dataclass
 class Gaussian:
-    """Gaussian struct.
+    """Gaussian struct in Taichi.
 
     :param position: gaussian center (mean).
     :param rotation: gaussian rotation quaternion.
@@ -66,6 +66,20 @@ class Gaussian:
         cov_mat = rotation_mat @ scale_mat \
             @ scale_mat.transpose() @ rotation_mat.transpose()
         return cov_mat
+
+    @ti.func
+    def hit(self, ray):
+        """Ray-Gaussian intersection test. The algorithm will only test the
+        intersection for t between ray.start and ray.end.
+
+        :param ray: camera ray.
+        :type ray: Ray
+        :return: two ray Gaussian intersections in increasing order. If
+            there's no solution, the result will be both ti.math.inf.
+        :rtype: ti.math.vec2
+        """
+        # TODO: Implement Ray-Gaussian intersection.
+        return 0
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
