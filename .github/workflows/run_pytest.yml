@@ -1,0 +1,27 @@
+name: Run pytest
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Run pytest.
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pytest
+        run: uv run pytest --log-cli-level=INFO
