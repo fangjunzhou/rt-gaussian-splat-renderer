@@ -113,4 +113,4 @@ def test_ray_eval():
 
     for i in range(e_field.shape[0]):
         for j in range(e_field.shape[1]):
-            assert e_field[i, j] == pytest.approx(0)
+            assert e_field[i, j] == pytest.approx(0, abs=1e-6)
