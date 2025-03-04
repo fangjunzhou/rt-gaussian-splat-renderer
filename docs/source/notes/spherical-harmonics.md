@@ -43,3 +43,46 @@ In other words, for any $P_{l}^{m}$,
 - If $l \ge m+2$, use rule 1.
 
 ![](/_static/image/2025-03-03-15-46-59.png)
+
+#### Example
+
+We can derived the 1st **order** ($m=1$) associated Legendre polynomial with the aforementioned algorithm
+
+$$
+\begin{align*}
+    P_{1}^{1} &= (-1) \cdot 1 \cdot (1 - x^{2})^{\frac{1}{2}}, \quad (\text{Rule 2}) \\
+    &= -(1 - x^{2})^{\frac{1}{2}} \\
+    P_{2}^{1} &= x \cdot 3 \cdot P_{1}^{1}, \quad (\text{Rule 3}) \\
+    &= -3x (1 - x^{2})^{\frac{1}{2}} \\
+    P_{3}^{1} &= \frac{x \cdot 5 \cdot P_{2}^{1} - 3 \cdot P_{1}^{1}}{2}, \quad (\text{Rule 1}) \\
+    &= \frac{3}{2} (1 - 5x^{2})(1 - x^{2})^{\frac{1}{2}}
+\end{align*}
+$$
+
+This checks out with the common associated Legendre functions listed on [Wikipedia](https://en.wikipedia.org/wiki/Associated_Legendre_polynomials#The_first_few_associated_Legendre_functions).
+
+#### Analytical Solutions to common Associated Legendre Functions
+
+We also checked and use other associated Legendre functions listed on [Wikipedia](https://en.wikipedia.org/wiki/Associated_Legendre_polynomials#The_first_few_associated_Legendre_functions) up to **degree** 3, since 3 degrees of spherical harmonics is accurate enough as mentioned in many literature.
+
+
+$$
+\begin{align*}
+    P_{0}^{0} &= 1 \\
+    P_{1}^{-1} &= -\frac{1}{2} P_{1}^{1} \\
+    P_{1}^{0} &= x \\
+    P_{1}^{1} &= -(1 - x^{2})^{\frac{1}{2}} \\
+    P_{2}^{-2} &= \frac{1}{24} P_{2}^{2} \\
+    P_{2}^{-1} &= -\frac{1}{6} P_{2}^{1} \\
+    P_{2}^{0} &= \frac{1}{2} (3x^{2} - 1) \\
+    P_{2}^{1} &= -3x (1 - x^{2})^{\frac{1}{2}} \\
+    P_{2}^{2} &= 3 (1 - x^{2}) \\
+    P_{3}^{-3} &= -\frac{1}{720} P_{3}^{3} \\
+    P_{3}^{-2} &= \frac{1}{120} P_{3}^{2} \\
+    P_{3}^{-1} &= -\frac{1}{12} P_{3}^{1} \\
+    P_{3}^{0} &= \frac{1}{2} (5x^{3} - 3x) \\
+    P_{3}^{1} &= \frac{3}{2} (1 - 5x^{2}) (1 - x^{2})^{\frac{1}{2}} \\
+    P_{3}^{2} &= 15x (1 - x^{2}) \\
+    P_{3}^{2} &= -15 (1 - x^{2})^{\frac{3}{2}}
+\end{align*}
+$$
