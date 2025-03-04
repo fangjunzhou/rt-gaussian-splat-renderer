@@ -3,6 +3,7 @@ Gaussian struct in Taichi.
 """
 
 import taichi as ti
+from rtgs.ray import Ray
 import rtgs.utils.quaternion as quat
 
 
@@ -50,12 +51,11 @@ class Gaussian:
         self.opacity = opacity
 
     @ti.func
-    def cov(self):
+    def cov(self) -> ti.math.vec3:
         """Get the covariance matrix of the gaussian using the rotation
         quaternion and scale vector.
 
         :return: a 3x3 covariance matrix.
-        :rtype: ti.math.mat3
         """
         rotation_mat = quat.as_rotation_mat3(self.rotation)
         scale_mat = ti.math.mat3([
@@ -68,18 +68,26 @@ class Gaussian:
         return cov_mat
 
     @ti.func
-    def hit(self, ray):
+    def eval(self, pos: ti.math.vec3, dir: ti.math.vec3) -> ti.math.vec3:
+        """Evaluate gaussian color.
+
+        :param pos: evaluate position.
+        :param dir: ray direction for SH color encoding.
+        :return: gaussian color at pos from direction dir.
+        """
+        return ti.math.vec3(0)
+
+    @ti.func
+    def hit(self, ray: Ray) -> ti.math.vec2:
         """Ray-Gaussian intersection test. The algorithm will only test the
         intersection for t between ray.start and ray.end.
 
         :param ray: camera ray.
-        :type ray: Ray
         :return: two ray Gaussian intersections in increasing order. If
             there's no solution, the result will be both ti.math.inf.
-        :rtype: ti.math.vec2
         """
         # TODO: Implement Ray-Gaussian intersection.
-        return 0
+        return ti.math.vec2(0)
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
