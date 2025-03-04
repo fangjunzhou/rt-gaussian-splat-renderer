@@ -3,7 +3,7 @@ Gaussian struct in Taichi.
 """
 
 import taichi as ti
-import rt_gaussian_splat_renderer.utils.quaternion as quat
+import rtgs.utils.quaternion as quat
 
 
 @ti.dataclass

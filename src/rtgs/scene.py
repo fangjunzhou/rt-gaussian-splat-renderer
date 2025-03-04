@@ -8,9 +8,9 @@ from taichi import StructField
 import pandas as pd
 import pathlib
 from pyntcloud import PyntCloud
-from rt_gaussian_splat_renderer.gaussian import Gaussian
-from rt_gaussian_splat_renderer.ray import Ray
-from rt_gaussian_splat_renderer.utils.math import sigmoid
+from rtgs.gaussian import Gaussian
+from rtgs.ray import Ray
+from rtgs.utils.math import sigmoid
 
 
 logger = logging.getLogger(__name__)
