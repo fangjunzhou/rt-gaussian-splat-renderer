@@ -2,7 +2,7 @@ import taichi as ti
 import logging
 import pytest
 
-from rt_gaussian_splat_renderer.ray import Ray, new_ray
+from rtgs.ray import Ray, new_ray
 
 
 logger = logging.getLogger(__name__)

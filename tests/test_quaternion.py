@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import logging
 
-import rt_gaussian_splat_renderer.utils.quaternion as quat
+import rtgs.utils.quaternion as quat
 
 
 logger = logging.getLogger(__name__)

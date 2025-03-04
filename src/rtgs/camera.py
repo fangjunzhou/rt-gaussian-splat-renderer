@@ -2,8 +2,8 @@ import taichi as ti
 import math
 from typing import Tuple
 
-from rt_gaussian_splat_renderer.ray import Ray, new_ray
-from rt_gaussian_splat_renderer.utils.quaternion import rot_vec3
+from rtgs.ray import Ray, new_ray
+from rtgs.utils.quaternion import rot_vec3
 
 
 @ti.data_oriented
@@ -37,8 +37,10 @@ class Camera:
         :return: camera ray.
         :rtype: Ray
         """
-        px = (self.censor_size.x*u - 0.5*self.censor_size.x) / self.focal_length.x 
-        py = (self.censor_size.y*v - 0.5*self.censor_size.y) / self.focal_length.y
+        px = (self.censor_size.x * u - 0.5 *
+              self.censor_size.x) / self.focal_length.x
+        py = (self.censor_size.y * v - 0.5 *
+              self.censor_size.y) / self.focal_length.y
         pz = -1
 
         dir_camera = ti.math.vec3(px, py, pz)

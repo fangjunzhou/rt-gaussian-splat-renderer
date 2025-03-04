@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import quaternion as quat
 
-from rt_gaussian_splat_renderer.gaussian import Gaussian, new_gaussian
+from rtgs.gaussian import Gaussian, new_gaussian
 
 logger = logging.getLogger(__name__)
 

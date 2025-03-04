@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "rt-gaussian-splat-renderer"
+project = "rtgs"
 copyright = "2025, Fangjun Zhou, Coco Xu"
 author = "Fangjun Zhou, Coco Xu"
 release = "0.1.0"
@@ -40,7 +40,7 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 autodoc2_packages = [
-    "../../src/rt_gaussian_splat_renderer",
+    "../../src/rtgs",
 ]
 
 # -- Options for HTML output -------------------------------------------------

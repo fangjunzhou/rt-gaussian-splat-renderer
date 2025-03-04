@@ -1,5 +1,5 @@
 [project]
-name = "rt-gaussian-splat-renderer"
+name = "rtgs"
 version = "0.1.0"
 description = "Implementation of 3D Gaussian Ray Tracing: Fast Tracing of Particle Scenes"
 readme = "README.md"

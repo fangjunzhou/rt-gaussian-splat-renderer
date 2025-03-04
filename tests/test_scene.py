@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import taichi as ti
 
-from rt_gaussian_splat_renderer.scene import Scene
+from rtgs.scene import Scene
 
 
 logger = logging.getLogger(__name__)

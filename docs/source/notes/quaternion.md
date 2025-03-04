@@ -10,11 +10,11 @@ The quaternion math implemented in this project follows the [CS 348A Lecture Not
 
 We implemented following quaternion math in Taichi:
 
-- [`mul`](#rt_gaussian_splat_renderer.utils.quaternion.mul)
-- [`conj`](#rt_gaussian_splat_renderer.utils.quaternion.conj)
-- [`inv`](#rt_gaussian_splat_renderer.utils.quaternion.inv)
-- [`from_axis_angle`](#rt_gaussian_splat_renderer.utils.quaternion.from_axis_angle)
-- [`as_axis_angle`](#rt_gaussian_splat_renderer.utils.quaternion.as_axis_angle)
-- [`rot_vec3`](#rt_gaussian_splat_renderer.utils.quaternion.rot_vec3)
-- [`as_rotation_mat3`](#rt_gaussian_splat_renderer.utils.quaternion.as_rotation_mat3)
-- [`as_rotation_mat4`](#rt_gaussian_splat_renderer.utils.quaternion.as_rotation_mat4)
+- [`mul`](#rtgs.utils.quaternion.mul)
+- [`conj`](#rtgs.utils.quaternion.conj)
+- [`inv`](#rtgs.utils.quaternion.inv)
+- [`from_axis_angle`](#rtgs.utils.quaternion.from_axis_angle)
+- [`as_axis_angle`](#rtgs.utils.quaternion.as_axis_angle)
+- [`rot_vec3`](#rtgs.utils.quaternion.rot_vec3)
+- [`as_rotation_mat3`](#rtgs.utils.quaternion.as_rotation_mat3)
+- [`as_rotation_mat4`](#rtgs.utils.quaternion.as_rotation_mat4)
