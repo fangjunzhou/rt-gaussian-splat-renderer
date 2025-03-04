@@ -41,13 +41,11 @@ class Ray:
         self.end = end
 
     @ti.func
-    def get(self, t):
+    def get(self, t: ti.f32) -> ti.math.vec3:
         """Evaluate ray position parameterized at time t.
 
         :param t: ray parameter t.
-        :type t: ti.f32
         :return: ray position at time t.
-        :rtype: ti.math.vec3
         """
         return self.origin + t * self.direction
 
