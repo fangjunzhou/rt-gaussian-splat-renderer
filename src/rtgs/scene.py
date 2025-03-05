@@ -71,7 +71,7 @@ class Scene:
         self.gaussian_field = Gaussian.field(shape=(num_points,))
 
         @ti.kernel
-        def ker_build_gaussian():
+        def build_gaussian():
             for i in range(num_points):
                 position = pos_field[i]
                 rotation = rot_field[i]
@@ -81,7 +81,7 @@ class Scene:
                 self.gaussian_field[i].init(
                     position, rotation, scale, color, opacity)
 
-        ker_build_gaussian()
+        build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
 
     @ti.func
