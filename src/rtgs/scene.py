@@ -18,14 +18,21 @@ logger = logging.getLogger(__name__)
 
 @ti.dataclass
 class SceneHit:
-    # Index of the gaussian in the scene Gaussian field.
+    """Scene hit information.
+
+    :param gaussian_idx: index of the gaussian in the scene Gaussian field.
+    :param intersections: the solution to Gaussian.hit(ray) as a vec2 interval.
+    """
     gaussian_idx: int
-    # The solution to Gaussian.hit(ray).
     intersections: ti.math.vec2
 
 
 @ti.data_oriented
 class Scene:
+    """A Gaussian splatting scene representation.
+
+    :param gaussian_field: a list of all the Gaussians in the scene.
+    """
     # 1D field of gaussians.
     gaussian_field: StructField
     # TODO: Implement Taichi BVH.
@@ -85,11 +92,13 @@ class Scene:
         logger.info(f"Gaussian field loaded successfully.")
 
     @ti.func
-    def hit(self, ray: Ray) -> SceneHit:
+    def hit(self, ray):
         """Ray cast hit the Gaussian scene.
 
         :param ray: a camera ray.
+        :type ray: Ray
         :return: Scene hit info.
+        :rtype: SceneHit
         """
         # TODO: Implement ray Gaussian intersection.
         return SceneHit(gaussian_idx=-1)
