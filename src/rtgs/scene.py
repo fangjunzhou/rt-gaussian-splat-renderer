@@ -16,6 +16,14 @@ from rtgs.utils.math import sigmoid
 logger = logging.getLogger(__name__)
 
 
+@ti.dataclass
+class SceneHit:
+    # Index of the gaussian in the scene Gaussian field.
+    gaussian_idx: int
+    # The solution to Gaussian.hit(ray).
+    intersections: ti.math.vec2
+
+
 @ti.data_oriented
 class Scene:
     # 1D field of gaussians.
@@ -77,11 +85,11 @@ class Scene:
         logger.info(f"Gaussian field loaded successfully.")
 
     @ti.func
-    def hit(self, ray: Ray) -> Gaussian:
+    def hit(self, ray: Ray) -> SceneHit:
         """Ray cast hit the Gaussian scene.
 
         :param ray: a camera ray.
-        :return: the first Gaussian in the scene hit by the ray.
+        :return: Scene hit info.
         """
         # TODO: Implement ray Gaussian intersection.
-        return Gaussian()
+        return SceneHit(gaussian_idx=-1)
