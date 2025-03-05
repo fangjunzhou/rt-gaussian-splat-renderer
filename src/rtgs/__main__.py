@@ -35,8 +35,8 @@ def main():
         description="Taichi implementation of 3D Gaussian Ray Tracing."
     )
     argparser.add_argument(
-        "-s",
-        "--scene",
+        "-o",
+        "--open",
         help="Path to the .splt or .ply Gaussian splatting scene file.",
         type=pathlib.Path
     )
@@ -54,6 +54,20 @@ def main():
         type=float,
         default=90
     )
+    argparser.add_argument(
+        "-s",
+        "--sample",
+        help="Render sample rate.",
+        type=int,
+        default=16
+    )
+    argparser.add_argument(
+        "-d",
+        "--depth",
+        help="Render sample depth.",
+        type=int,
+        default=4
+    )
     args = argparser.parse_args()
 
     # Camera parameters.
@@ -64,7 +78,7 @@ def main():
     focal_length = (res[1] / 2) / np.tan(half_angle)
 
     # Load scene file.
-    scene_path: pathlib.Path = args.scene
+    scene_path: pathlib.Path = args.open
     scene = Scene()
     scene.load_file(scene_path)
     logger.info(f"Scene file loaded from {scene_path}.")
@@ -81,14 +95,21 @@ def main():
     # Setup ray tracer.
     ray_tracer = RayTracer(vec2i(res), scene, camera)
 
-    # TODO: Support higher sample rate and sample depth.
-    ray_tracer.sample(1)
-
-    ray_tracer.generate_disp_buffer()
+    # Render parameters.
+    num_sample: int = args.sample
+    num_depth: int = args.depth
 
     # Display rendered result.
     gui = ti.GUI("Ray Traced Gaussian Splatting", res=res)  # pyright: ignore
+    rendering = True
     while gui.running:
+        # Take samples.
+        if ray_tracer.num_samples < num_sample:
+            ray_tracer.sample(num_depth)
+            ray_tracer.generate_disp_buffer(ray_tracer.num_samples)
+        elif rendering:
+            rendering = False
+            logging.info(f"Finish sampling.")
         gui.set_image(ray_tracer.disp_buf)
         gui.show()
 

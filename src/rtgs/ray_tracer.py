@@ -4,6 +4,7 @@ import taichi as ti
 
 from rtgs.camera import Camera
 from rtgs.scene import Scene
+from rtgs.utils.ti_math import random_vec3
 from rtgs.utils.types import vec2i
 
 
@@ -16,7 +17,7 @@ class RayTracer:
     # Render buffer.
     sample_buf: ti.Field
     attenuation_buf: ti.Field
-    num_samples: int
+    num_samples: ti.i32
     # Display buffer.
     disp_buf: ti.Field
 
@@ -42,7 +43,7 @@ class RayTracer:
         self.clear_attenuation()
         self.camera.generate_ray_field()
         # Ray trace depth steps.
-        for i in range(depth):
+        for _ in range(depth):
             self.sample_step()
         self.num_samples += 1
 
@@ -59,10 +60,10 @@ class RayTracer:
             self.attenuation_buf[i, j] = 1
 
     @ti.kernel
-    def generate_disp_buffer(self):
+    def generate_disp_buffer(self, num_samples: ti.i32):
         """Generate display buffer from sample buffer (average n samples)."""
         for i, j in self.disp_buf:
-            self.disp_buf[i, j] = self.sample_buf[i, j] / self.num_samples
+            self.disp_buf[i, j] = self.sample_buf[i, j] / num_samples
 
     @ti.kernel
     def sample_step(self):
@@ -70,4 +71,7 @@ class RayTracer:
         accumulate radiance into sample buffer. This kernel only accumulate
         one Gaussian.
         """
-        pass
+        for i, j in self.sample_buf:
+            # Random sample placeholder.
+            self.sample_buf[i, j] += random_vec3()
+            # TODO: Implement ray tracing.
