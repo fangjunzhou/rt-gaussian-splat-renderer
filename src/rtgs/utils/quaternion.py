@@ -6,12 +6,15 @@ import taichi as ti
 
 
 @ti.func
-def mul(p: ti.math.vec4, q: ti.math.vec4) -> ti.math.vec4:
+def mul(p, q):
     """Quaternion multiplication.
 
     :param p: left quaternion.
+    :type p: ti.math.vec4
     :param q: right quaternion.
+    :type q: ti.math.vec4
     :return: multiplication result pq.
+    :rtype: ti.math.vec4
     """
     # Scalar.
     w = p.w * q.w - ti.math.dot(p.xyz, q.xyz)
@@ -21,32 +24,38 @@ def mul(p: ti.math.vec4, q: ti.math.vec4) -> ti.math.vec4:
 
 
 @ti.func
-def conj(q: ti.math.vec4) -> ti.math.vec4:
+def conj(q):
     """The complex conjugate of a quaternion.
 
     :param q: input quaternion.
+    :type q: ti.math.vec4
     :return: the complex conjugate of q.
+    :rtype: ti.math.vec4
     """
     return ti.math.vec4(-q.x, -q.y, -q.z, q.w)
 
 
 @ti.func
-def inv(q: ti.math.vec4) -> ti.math.vec4:
+def inv(q):
     """The inverse of a quaternion.
 
     :param q: input quaternion.
+    :type q: ti.math.vec4
     :return: the inverse of q.
+    :rtype: ti.math.vec4
     """
     return conj(q) / ti.math.length(q)
 
 
 @ti.func
-def from_axis_angle(v: ti.math.vec3) -> ti.math.vec4:
+def from_axis_angle(v):
     """Convert a vector in axis-angle representation to quaternion.
 
     :param v: axis-angle represented vector with v pointing to the direction
         of the rotation and length of v equals to the angle to rotate.
+    :type v: ti.math.vec3
     :return: rotation quaternion.
+    :rtype: ti.math.vec4
     """
     theta = ti.math.length(v)
     if theta > 0:
@@ -56,11 +65,13 @@ def from_axis_angle(v: ti.math.vec3) -> ti.math.vec4:
 
 
 @ti.func
-def as_axis_angle(q: ti.math.vec4) -> ti.math.vec3:
+def as_axis_angle(q):
     """Convert a quaternion into axis-angle representation.
 
     :param q: a unit quaternion.
+    :type q: ti.math.vec4
     :return: axis-angle representation of q
+    :rtype: ti.math.vec3
     """
     theta = ti.math.acos(q.w) * 2
     norm = ti.math.length(q.xyz)
@@ -75,19 +86,24 @@ def rot_vec3(q, v):
     """Rotate a vector v using a quaternion q.
 
     :param q: quaternion q.
+    :type q: ti.math.vec4
     :param v: vector v.
+    :type v: ti.math.vec3
     :return: the rotated vector v using quaternion q (as $q\\vec{v}q^{*}$).
+    :rtype: ti.math.vec3
     """
     qv = ti.math.vec4(v.x, v.y, v.z, 0)
     return mul(q, mul(qv, conj(q))).xyz
 
 
 @ti.func
-def as_rotation_mat3(q: ti.math.vec4) -> ti.math.mat3:
+def as_rotation_mat3(q):
     """Convert a vec4 quaternion to a 3x3 rotation matrix.
 
     :param q: a normalized quaternion.
+    :type q: ti.math.vec4
     :return: a 3x3 rotation matrix in homogeneous coordinate.
+    :rtype: ti.math.mat3
     """
     mx = mul(q, mul(ti.math.vec4(1, 0, 0, 0), conj(q)))
     my = mul(q, mul(ti.math.vec4(0, 1, 0, 0), conj(q)))
@@ -106,12 +122,14 @@ def as_rotation_mat3(q: ti.math.vec4) -> ti.math.mat3:
 
 
 @ti.func
-def as_rotation_mat4(q: ti.math.vec4) -> ti.math.mat4:
+def as_rotation_mat4(q):
     """Convert a vec4 quaternion to a 4x4 rotation matrix in homogeneous
     coordinate.
 
     :param q: a normalized quaternion.
+    :type q: ti.math.vec4
     :return: a 4x4 rotation matrix in homogeneous coordinate.
+    :rtype: ti.math.mat4
     """
     mx = mul(q, mul(ti.math.vec4(1, 0, 0, 0), conj(q)))
     my = mul(q, mul(ti.math.vec4(0, 1, 0, 0), conj(q)))

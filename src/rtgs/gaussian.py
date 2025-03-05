@@ -51,11 +51,12 @@ class Gaussian:
         self.opacity = opacity
 
     @ti.func
-    def cov(self) -> ti.math.vec3:
+    def cov(self):
         """Get the covariance matrix of the gaussian using the rotation
         quaternion and scale vector.
 
         :return: a 3x3 covariance matrix.
+        :rtype: ti.math.mat3
         """
         rotation_mat = quat.as_rotation_mat3(self.rotation)
         scale_mat = ti.math.mat3([
@@ -68,23 +69,29 @@ class Gaussian:
         return cov_mat
 
     @ti.func
-    def eval(self, pos: ti.math.vec3, dir: ti.math.vec3) -> ti.math.vec3:
+    def eval(self, pos, dir):
         """Evaluate gaussian color.
 
         :param pos: evaluate position.
+        :type pos: ti.math.vec3
         :param dir: ray direction for SH color encoding.
+        :type dir: ti.math.vec3
         :return: gaussian color at pos from direction dir.
+        :rtype: ti.math.vec3
         """
+        # TODO: Implement gaussian evaluation.
         return ti.math.vec3(0)
 
     @ti.func
-    def hit(self, ray: Ray) -> ti.math.vec2:
+    def hit(self, ray):
         """Ray-Gaussian intersection test. The algorithm will only test the
         intersection for t between ray.start and ray.end.
 
         :param ray: camera ray.
+        :type ray: Ray
         :return: two ray Gaussian intersections in increasing order. If
             there's no solution, the result will be both ti.math.inf.
+        :rtype: ti.math.vec2
         """
         # TODO: Implement Ray-Gaussian intersection.
         return ti.math.vec2(0)

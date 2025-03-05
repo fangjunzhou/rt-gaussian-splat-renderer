@@ -29,13 +29,15 @@ class Camera:
         self.cam_ray_field = Ray.field(shape=(buf_size.x, buf_size.y))
 
     @ti.func
-    def generate_ray(self, uv: ti.math.vec2) -> Ray:
+    def generate_ray(self, uv):
         """Generate ray based on screen space coordinate. (u, v) is from (0, 0)
         to (1, 1), with (0, 0) being the bottom left of the screen and (1, 1)
         being the top right of the screen.
 
-        :param uv: screen space coordinate.
+        :param uv: screen space coordinate from (0, 0) to (1, 1).
+        :type uv: ti.math.vec2
         :return: camera ray.
+        :rtype: Ray
         """
         pxy = (self.censor_size * uv - 0.5 *
                self.censor_size) / self.focal_length
