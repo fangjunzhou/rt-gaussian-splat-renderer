@@ -71,7 +71,7 @@ def as_axis_angle(q: ti.math.vec4) -> ti.math.vec3:
 
 
 @ti.func
-def rot_vec3(q: ti.math.vec4, v: ti.math.vec3) -> ti.math.vec3:
+def rot_vec3(q, v):
     """Rotate a vector v using a quaternion q.
 
     :param q: quaternion q.
