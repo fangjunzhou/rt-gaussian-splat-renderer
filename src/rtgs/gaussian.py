@@ -100,16 +100,16 @@ class Gaussian:
         thres=1e-6
         C = (ray.origin - self.position).dot(self.cov() @ (ray.origin - self.position)) - thres
         delta=B**2-4*A*C
-        if delta>0:
-            t1=(-B+ti.sqrt(delta))/(2*A)
-            t2=(-B-ti.sqrt(delta))/(2*A)
-            return ti.math.vec2(t1,t2)
-        elif delta==0:
-            t=-B/(2*A)
-            return ti.math.vec2(t,ti.math.inf)
-        else:
-            return ti.math.vec2(ti.math.inf,ti.math.inf)
+        result = ti.math.vec2(ti.math.inf, ti.math.inf)
 
+        if delta > 0:
+            t1 = (-B + ti.sqrt(delta)) / (2 * A)
+            t2 = (-B - ti.sqrt(delta)) / (2 * A)
+            result = ti.math.vec2(t1, t2) 
+        elif delta == 0:
+            t = -B / (2 * A)
+            result = ti.math.vec2(t, ti.math.inf)
+        return result
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
                  rotation: ti.math.vec4 = ti.math.vec4(0, 0, 0, 1),
