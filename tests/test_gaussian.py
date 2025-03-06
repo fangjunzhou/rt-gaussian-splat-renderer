@@ -65,26 +65,25 @@ def test_gaussian_field():
 def test_gaussian_hit():
     '''Test Gaussian hit method.'''
     SIZE = (4,)
-    gaussian_field = Gaussian.field(shape=SIZE)
+    gaussian_field = Gaussian.field(shape=SIZE) 
     gaussian = new_gaussian()
     gaussian_field[0] = gaussian
+    hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(3,))
     @ti.kernel
-    def test_gaussian_hit():
-        '''Test Gaussian hit method.''' 
+    def compute_hit():
         ray = new_ray()
-        hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(3,))
-        hit_result[0] = gaussian.hit(ray)
+        hit_result[0] = gaussian.hit(ray) 
+
         ray = new_ray(ti.math.vec3(0, 0, 0), ti.math.vec3(0, 1, 0), 0, 1)
         hit_result[1] = gaussian.hit(ray)
+
         ray = new_ray(ti.math.vec3(0, 0, 0), ti.math.vec3(0, 1, 0), 0, 1)
         gaussian.position = ti.math.vec3(0, 0, 1)
         hit_result[2] = gaussian.hit(ray)
 
-    test_gaussian_hit()
-
-    hit_results = ti.Vector.field(2, dtype=ti.f32, shape=(3,))
-    ti.sync() 
-
-    assert hit_results[0] == ti.math.vec2(0, ti.math.inf)
-    assert hit_results[1] == ti.math.vec2(0, ti.math.inf)
-    assert hit_results[2] == ti.math.vec2(1, ti.math.inf)
+    compute_hit()
+    ti.sync()
+    
+    assert hit_result[0] == ti.math.vec2(0, ti.math.inf)
+    assert hit_result[1] == ti.math.vec2(0, ti.math.inf)
+    assert hit_result[2] == ti.math.vec2(1, ti.math.inf)
