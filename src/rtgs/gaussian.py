@@ -94,11 +94,11 @@ class Gaussian:
         :rtype: ti.math.vec2
         """
         # TODO: Implement Ray-Gaussian intersection.
-        A=ray.direction.transpose()@self.cov()@ray.direction
-        B=2*(ray.direction.transpose()@self.cov()@(ray.origin-self.position))
+        A = ray.direction.dot(self.cov() @ ray.direction)
+        B = 2 * ray.direction.dot(self.cov() @ (ray.origin - self.position))
         # determine the threshold for intersection
         thres=1e-6
-        C=(ray.origin-self.position).transpose()@self.cov()@(ray.origin-self.position)-thres
+        C = (ray.origin - self.position).dot(self.cov() @ (ray.origin - self.position)) - thres
         delta=B**2-4*A*C
         if delta>0:
             t1=(-B+ti.sqrt(delta))/(2*A)
