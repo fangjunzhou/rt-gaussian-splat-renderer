@@ -64,14 +64,13 @@ def test_gaussian_field():
 
 def test_gaussian_hit():
     '''Test Gaussian hit method.'''
+    SIZE = (4,)
+    gaussian_field = Gaussian.field(shape=SIZE)
+    gaussian = new_gaussian()
+    gaussian_field[0] = gaussian
     @ti.kernel
     def test_gaussian_hit():
-        '''Test Gaussian hit method.'''
-        
-        SIZE = (4,)
-        gaussian_field = Gaussian.field(shape=SIZE)
-        gaussian = new_gaussian()
-        gaussian_field[0] = gaussian
+        '''Test Gaussian hit method.''' 
         ray = new_ray()
         hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(3,))
         hit_result[0] = gaussian.hit(ray)
