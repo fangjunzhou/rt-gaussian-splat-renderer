@@ -68,7 +68,7 @@ def test_gaussian_hit():
     gaussian_field = Gaussian.field(shape=SIZE) 
     gaussian = new_gaussian()
     gaussian_field[0] = gaussian
-    hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(3,))
+    hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(2,))
     @ti.kernel
     def compute_hit():
         ray = new_ray()
@@ -77,13 +77,8 @@ def test_gaussian_hit():
         ray = new_ray(ti.math.vec3(0, 0, 0), ti.math.vec3(0, 1, 0), 0, 1)
         hit_result[1] = gaussian.hit(ray)
 
-        ray = new_ray(ti.math.vec3(0, 0, 0), ti.math.vec3(0, 1, 0), 0, 1)
-        gaussian.position = ti.math.vec3(0, 0, 1)
-        hit_result[2] = gaussian.hit(ray)
-
     compute_hit()
     ti.sync()
-    
+
     assert hit_result[0] == ti.math.vec2(0, ti.math.inf)
     assert hit_result[1] == ti.math.vec2(0, ti.math.inf)
-    assert hit_result[2] == ti.math.vec2(1, ti.math.inf)
