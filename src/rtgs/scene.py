@@ -101,4 +101,10 @@ class Scene:
         :rtype: SceneHit
         """
         # TODO: Implement ray Gaussian intersection.
-        return SceneHit(gaussian_idx=-1)
+        hit = SceneHit(gaussian_idx=-1)
+        for i in range(self.gaussian_field.shape[0]):
+            gaussian = self.gaussian_field[i]
+            intersections = gaussian.hit(ray)
+            if intersections.x < ray.end and intersections.y > ray.start:
+                hit = SceneHit(gaussian_idx=i, intersections=intersections)
+        return hit
