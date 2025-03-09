@@ -102,9 +102,12 @@ class Scene:
         """
         # TODO: Implement ray Gaussian intersection.
         hit = SceneHit(gaussian_idx=-1)
+        hit_pos = ti.math.inf
         for i in range(self.gaussian_field.shape[0]):
             gaussian = self.gaussian_field[i]
             intersections = gaussian.hit(ray)
             if intersections.x < ray.end and intersections.y > ray.start:
-                hit = SceneHit(gaussian_idx=i, intersections=intersections)
+                if intersections.x < hit_pos:
+                    hit = SceneHit(gaussian_idx=i, intersections=intersections)
+                    hit_pos = intersections.x
         return hit
