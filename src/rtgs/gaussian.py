@@ -76,11 +76,11 @@ class Gaussian:
         :type pos: ti.math.vec3
         :param dir: ray direction for SH color encoding.
         :type dir: ti.math.vec3
-        :return: gaussian color at pos from direction dir.
-        :rtype: ti.math.vec3
+        :return: gaussian color and alpha at pos from direction dir.
+        :rtype: ti.math.vec4
         """
         # TODO: Implement gaussian evaluation.
-        return ti.math.vec3(0)
+        return ti.math.vec4(0)
 
     @ti.func
     def hit(self, ray):
