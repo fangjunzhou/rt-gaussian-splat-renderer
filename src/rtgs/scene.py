@@ -58,7 +58,8 @@ class Scene:
         scales = points[["scale_0", "scale_1", "scale_2"]].to_numpy()
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
         opacities = points["opacity"].to_numpy()
-        # Convert colors and opacity with sigmoid.
+        # Convert data with sigmoid.
+        scales = sigmoid(scales)
         colors = sigmoid(colors)
         opacities = sigmoid(opacities)
 

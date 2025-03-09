@@ -77,6 +77,18 @@ class RayTracer:
             hit = self.scene.hit(ray)
             if hit.gaussian_idx != -1:
                 gaussian = self.scene.gaussian_field[hit.gaussian_idx]
-                # TODO: Evaluate gaussian color.
-                self.sample_buf[i, j] += gaussian.color
-                # TODO: Update camera ray field.
+                eval_t = (hit.intersections.x + hit.intersections.y) / 2
+                eval_pos = ray.get(eval_t)
+                eval = gaussian.eval(eval_pos, ray.direction)
+                color = eval.xyz
+                alpha = eval.w
+                # Accumulate radiance.
+                self.sample_buf[i, j] += self.attenuation_buf[i, j] * \
+                    alpha * color
+                self.attenuation_buf[i, j] *= 1 - alpha
+                # Update camera ray field.
+                EPS = 1e-8
+                self.camera.cam_ray_field[i, j].start = \
+                    hit.intersections.y + EPS
+            else:
+                self.camera.cam_ray_field[i, j].start = ti.math.inf
