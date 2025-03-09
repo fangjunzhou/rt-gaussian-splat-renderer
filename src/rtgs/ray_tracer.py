@@ -75,4 +75,7 @@ class RayTracer:
             ray = self.camera.cam_ray_field[i, j]
             hit = self.scene.hit(ray)
             if hit.gaussian_idx != -1:
-                self.sample_buf[i, j] = ti.math.vec3(1, 0, 1)
+                gaussian = self.scene.gaussian_field[hit.gaussian_idx]
+                # TODO: Evaluate gaussian color.
+                self.sample_buf[i, j] += gaussian.color
+                # TODO: Update camera ray field.
