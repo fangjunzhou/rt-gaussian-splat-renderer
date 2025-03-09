@@ -41,7 +41,8 @@ class RayTracer:
         """
         # Reset attenuation and camera ray.
         self.clear_attenuation()
-        self.camera.generate_ray_field()
+        self.camera.generate_ray_field(
+            self.camera.position, self.camera.rotation)
         # Ray trace depth steps.
         for _ in range(depth):
             self.sample_step()
@@ -51,7 +52,7 @@ class RayTracer:
     def clear_sample(self):
         """Clear sample buffer."""
         for i, j in self.sample_buf:
-            self.attenuation_buf[i, j] = ti.math.vec3(0)
+            self.sample_buf[i, j] = ti.math.vec3(0)
 
     @ti.kernel
     def clear_attenuation(self):
@@ -75,4 +76,6 @@ class RayTracer:
             ray = self.camera.cam_ray_field[i, j]
             hit = self.scene.hit(ray)
             if hit.gaussian_idx != -1:
-                self.sample_buf[i, j] = ti.math.vec3(1, 0, 1)
+                gaussian = self.scene.gaussian_field[hit.gaussian_idx]
+                self.sample_buf[i, j] = gaussian.color
+                # TODO: Update camera ray field.

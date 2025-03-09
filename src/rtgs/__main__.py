@@ -5,6 +5,7 @@ import pathlib
 from typing import Tuple
 import taichi as ti
 import numpy as np
+import quaternion
 
 from rtgs.camera import Camera
 from rtgs.ray_tracer import RayTracer
@@ -85,12 +86,35 @@ def main():
 
     # Setup camera.
     # TODO: Support camera pose.
+    theta = 0
+    phi = np.pi / 2
+    r = 1
     camera = Camera(
         ti.math.vec3(0),
         ti.math.vec4(0, 0, 0, 1),
         vec2i(res),
         ti.math.vec2(focal_length, focal_length)
     )
+
+    def update_camera_pose(theta: float, phi: float, r: float):
+        pos = np.array([
+            r * np.cos(theta) * np.sin(phi),
+            r * np.sin(theta) * np.sin(phi),
+            r * np.cos(phi)
+        ])
+        look = -pos / np.linalg.norm(pos)
+        right = np.array([-np.sin(theta), np.cos(theta), 0])
+        up = np.linalg.cross(right, look)
+        rot = np.array([
+            right.tolist(),
+            up.tolist(),
+            (-look).tolist()
+        ]).T
+        quat = quaternion.from_rotation_matrix(rot)
+        camera.position = ti.math.vec3(pos)
+        camera.rotation = ti.math.vec4(quat.x, quat.y, quat.z, quat.w)
+
+    update_camera_pose(theta, phi, r)
 
     # Setup ray tracer.
     ray_tracer = RayTracer(vec2i(res), scene, camera)
@@ -101,15 +125,41 @@ def main():
 
     # Display rendered result.
     gui = ti.GUI("Ray Traced Gaussian Splatting", res=res)  # pyright: ignore
-    rendering = True
+    moving = False
+    pan_sensitivity = 2
+    scroll_sensitivity = 0.1
+    mouse_x, mouse_y = 0, 0
     while gui.running:
+        mouse_events = gui.get_events(ti.GUI.LMB, ti.GUI.WHEEL)
+        for mouse_event in mouse_events:
+            if mouse_event.key == ti.GUI.LMB:
+                if mouse_event.type == ti.GUI.PRESS:
+                    moving = True
+                    mouse_x, mouse_y = gui.get_cursor_pos()
+                elif mouse_event.type == ti.GUI.RELEASE:
+                    moving = False
+            if mouse_event.key == ti.GUI.WHEEL:
+                r += scroll_sensitivity * r * \
+                    float(mouse_event.delta.y)  # pyright: ignore
+                update_camera_pose(theta, phi, r)
+                ray_tracer.clear_sample()
+                ray_tracer.num_samples = 0
+        if moving:
+            nx, ny = gui.get_cursor_pos()
+            if mouse_x != nx or mouse_y != ny:
+                # Update camera parameter.
+                dx, dy = nx - mouse_x, ny - mouse_y
+                theta -= dx * pan_sensitivity
+                phi += dy * pan_sensitivity
+                phi = max(0, min(phi, np.pi))
+                mouse_x, mouse_y = nx, ny
+                update_camera_pose(theta, phi, r)
+                ray_tracer.clear_sample()
+                ray_tracer.num_samples = 0
         # Take samples.
         if ray_tracer.num_samples < num_sample:
             ray_tracer.sample(num_depth)
             ray_tracer.generate_disp_buffer(ray_tracer.num_samples)
-        elif rendering:
-            rendering = False
-            logging.info(f"Finish sampling.")
         gui.set_image(ray_tracer.disp_buf)
         gui.show()
 
