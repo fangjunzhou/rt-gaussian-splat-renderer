@@ -3,6 +3,7 @@ Gaussian struct in Taichi.
 """
 
 import taichi as ti
+from rtgs.ray import Ray
 import rtgs.utils.quaternion as quat
 
 
@@ -68,6 +69,25 @@ class Gaussian:
         return cov_mat
 
     @ti.func
+    def eval(self, pos, dir):
+        """Evaluate gaussian color.
+
+        :param pos: evaluate position.
+        :type pos: ti.math.vec3
+        :param dir: ray direction for SH color encoding.
+        :type dir: ti.math.vec3
+        :return: gaussian color and alpha at pos from direction dir.
+        :rtype: ti.math.vec4
+        """
+        # Evaluate gaussian
+        d = pos - self.position
+        cov_inv = ti.math.inverse(self.cov())
+        rho = ti.math.exp(- d.dot(cov_inv @ d))
+        alpha = self.opacity * rho
+        color = self.color
+        return ti.math.vec4(color.x, color.y, color.z, alpha)
+
+    @ti.func
     def hit(self, ray):
         """Ray-Gaussian intersection test. The algorithm will only test the
         intersection for t between ray.start and ray.end.
@@ -78,8 +98,25 @@ class Gaussian:
             there's no solution, the result will be both ti.math.inf.
         :rtype: ti.math.vec2
         """
-        # TODO: Implement Ray-Gaussian intersection.
-        return 0
+        # Ray-Gaussian intersection.
+        # Intersection threshold.
+        thres = ti.math.e
+        cov_inv = ti.math.inverse(self.cov())
+        A = ray.direction.dot(cov_inv @ ray.direction)
+        B = 2 * ray.direction.dot(cov_inv @ (ray.origin - self.position))
+        C = (ray.origin - self.position).dot(cov_inv @
+                                             (ray.origin - self.position)) - thres
+        delta = B**2 - 4 * A * C
+        result = ti.math.vec2(ti.math.inf, ti.math.inf)
+
+        if delta > 0:
+            t1 = (-B - ti.sqrt(delta)) / (2 * A)
+            t2 = (-B + ti.sqrt(delta)) / (2 * A)
+            result = ti.math.vec2(t1, t2)
+        elif delta == 0:
+            t = -B / (2 * A)
+            result = ti.math.vec2(t, ti.math.inf)
+        return result
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),

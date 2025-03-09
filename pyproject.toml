@@ -44,3 +44,6 @@ aggressive = 3
 docs = "task docs-build & task docs-host && kill $!"
 docs-build = "watchfiles 'make -C docs/ html' docs/source src"
 docs-host = "python -m http.server 8080 -d docs/build/html"
+
+[project.scripts]
+start = "rtgs.__main__:main"

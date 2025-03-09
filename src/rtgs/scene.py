@@ -16,8 +16,23 @@ from rtgs.utils.math import sigmoid
 logger = logging.getLogger(__name__)
 
 
+@ti.dataclass
+class SceneHit:
+    """Scene hit information.
+
+    :param gaussian_idx: index of the gaussian in the scene Gaussian field.
+    :param intersections: the solution to Gaussian.hit(ray) as a vec2 interval.
+    """
+    gaussian_idx: int
+    intersections: ti.math.vec2
+
+
 @ti.data_oriented
 class Scene:
+    """A Gaussian splatting scene representation.
+
+    :param gaussian_field: a list of all the Gaussians in the scene.
+    """
     # 1D field of gaussians.
     gaussian_field: StructField
     # TODO: Implement Taichi BVH.
@@ -43,7 +58,8 @@ class Scene:
         scales = points[["scale_0", "scale_1", "scale_2"]].to_numpy()
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
         opacities = points["opacity"].to_numpy()
-        # Convert colors and opacity with sigmoid.
+        # Convert data with sigmoid.
+        scales = sigmoid(scales)
         colors = sigmoid(colors)
         opacities = sigmoid(opacities)
 
@@ -63,7 +79,7 @@ class Scene:
         self.gaussian_field = Gaussian.field(shape=(num_points,))
 
         @ti.kernel
-        def ker_build_gaussian():
+        def build_gaussian():
             for i in range(num_points):
                 position = pos_field[i]
                 rotation = rot_field[i]
@@ -73,15 +89,26 @@ class Scene:
                 self.gaussian_field[i].init(
                     position, rotation, scale, color, opacity)
 
-        ker_build_gaussian()
+        build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
 
     @ti.func
-    def hit(self, ray: Ray) -> Gaussian:
+    def hit(self, ray):
         """Ray cast hit the Gaussian scene.
 
         :param ray: a camera ray.
-        :return: the first Gaussian in the scene hit by the ray.
+        :type ray: Ray
+        :return: Scene hit info.
+        :rtype: SceneHit
         """
         # TODO: Implement ray Gaussian intersection.
-        return Gaussian()
+        hit = SceneHit(gaussian_idx=-1)
+        hit_pos = ti.math.inf
+        for i in range(self.gaussian_field.shape[0]):
+            gaussian = self.gaussian_field[i]
+            intersections = gaussian.hit(ray)
+            if intersections.x < ray.end and intersections.y > ray.start:
+                if intersections.x < hit_pos:
+                    hit = SceneHit(gaussian_idx=i, intersections=intersections)
+                    hit_pos = intersections.x
+        return hit

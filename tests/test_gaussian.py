@@ -4,6 +4,7 @@ import numpy as np
 import quaternion as quat
 
 from rtgs.gaussian import Gaussian, new_gaussian
+from rtgs.ray import Ray, new_ray
 
 logger = logging.getLogger(__name__)
 
@@ -60,3 +61,24 @@ def test_gaussian_field():
     assert gaussian_field[0].scale == ti.math.vec3(1, 1, 1)
     assert gaussian_field[0].color == ti.math.vec3(1, 0, 1)
     assert gaussian_field[0].opacity == 1
+
+def test_gaussian_hit():
+    '''Test Gaussian hit method.'''
+    SIZE = (4,)
+    gaussian_field = Gaussian.field(shape=SIZE) 
+    gaussian = new_gaussian()
+    gaussian_field[0] = gaussian
+    hit_result = ti.Vector.field(2, dtype=ti.f32, shape=(2,))
+    @ti.kernel
+    def compute_hit():
+        ray = new_ray()
+        hit_result[0] = gaussian.hit(ray) 
+
+        ray = new_ray(ti.math.vec3(0, 0, 0), ti.math.vec3(0, 1, 0), 0, 1)
+        hit_result[1] = gaussian.hit(ray)
+
+    compute_hit()
+    ti.sync()
+
+    assert hit_result[0] == ti.math.vec2(0, ti.math.inf)
+    assert hit_result[1] == ti.math.vec2(0, ti.math.inf)
