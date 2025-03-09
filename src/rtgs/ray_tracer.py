@@ -72,6 +72,7 @@ class RayTracer:
         one Gaussian.
         """
         for i, j in self.sample_buf:
-            # Random sample placeholder.
-            self.sample_buf[i, j] += random_vec3()
-            # TODO: Implement ray tracing.
+            ray = self.camera.cam_ray_field[i, j]
+            hit = self.scene.hit(ray)
+            if hit.gaussian_idx != -1:
+                self.sample_buf[i, j] = ti.math.vec3(1, 0, 1)
