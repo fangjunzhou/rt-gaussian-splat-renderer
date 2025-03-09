@@ -2,13 +2,14 @@ import taichi as ti
 
 from rtgs.ray import Ray, new_ray
 from rtgs.utils.quaternion import rot_vec3
+from rtgs.utils.types import vec2i
 
 
 @ti.data_oriented
 class Camera:
     position: ti.math.vec3
     rotation: ti.math.vec4
-    buf_size: ti.types.vector(2, ti.i32)
+    buf_size: vec2i
     censor_size: ti.math.vec2
     focal_length: ti.math.vec2
     cam_ray_field: ti.StructField
@@ -17,7 +18,7 @@ class Camera:
             self,
             position: ti.math.vec3,
             rotation: ti.math.vec4,
-            buf_size: ti.types.vector(2, ti.i32),
+            buf_size: vec2i,
             focal_length: ti.math.vec2):
         self.position = position
         self.rotation = rotation
