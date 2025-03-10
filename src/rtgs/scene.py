@@ -44,9 +44,9 @@ class Scene:
 
     def __init__(self) -> None:
         self.gaussian_field = Gaussian.field(shape=())
-        self.bvh_field = BVHNode.field(shape=(128,))
-        self.stack = ti.field(ti.i32, shape=128)
-        self.max_node_num = 256
+        self.bvh_field = BVHNode.field(shape=(1024,))
+        self.stack = ti.field(ti.i32, shape=1024)
+        self.max_node_num = 1024
 
     def load_file(self, path: pathlib.Path):
         """Load ply or splt file as a Gaussian splatting scene.
@@ -162,8 +162,7 @@ class Scene:
             for i in range(node.primitive_left, node.primitive_right):
                 gaussian = self.gaussian_field[i]
                 p_min, p_max = gaussian.bounding_box()
-                bounds2 = Bounds(p_min, p_max)
-                bounds = bounds.bounds_union(bounds2)
+                bounds = bounds.bounds_union(Bounds(p_min, p_max))
 
             node.bounds = bounds
             best_axis = -1
@@ -236,7 +235,7 @@ class Scene:
 
         @ti.kernel
         def build_bvh():
-            self.bvh_field[0].init(bounds=Bounds(), primitive_left=0, primitive_right=self.gaussian_field.shape[0] - 1, depth=0)
+            self.bvh_field[0].init(bounds=Bounds(), primitive_left=0, primitive_right=self.gaussian_field.shape[0], depth=0)
 
         build_bvh()
         for node_id in range(self.max_node_num):  
