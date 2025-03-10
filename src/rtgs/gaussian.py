@@ -18,6 +18,7 @@ class Gaussian:
     position: ti.math.vec3
     rotation: ti.math.vec4
     scale: ti.math.vec3
+    id: ti.i32
 
     color: ti.math.vec3
     opacity: ti.f32
@@ -30,7 +31,9 @@ class Gaussian:
              rotation=ti.math.vec4(0, 0, 0, 1),
              scale=ti.math.vec3(1, 1, 1),
              color=ti.math.vec3(1, 0, 1),
-             opacity=1):
+             opacity=1,
+            id=0
+             ):
         """Taichi scope Gaussian initialization method.
 
         :param position: gaussian center (mean).
@@ -67,6 +70,28 @@ class Gaussian:
         cov_mat = rotation_mat @ scale_mat \
             @ scale_mat.transpose() @ rotation_mat.transpose()
         return cov_mat
+    
+    @ti.func
+    def bounding_box(self):
+        """Compute the axis-aligned bounding box (AABB) for the Gaussian considering rotation."""
+        cov_mat = self.cov()  # Covariance matrix
+        std_devs = ti.math.vec3(
+            ti.sqrt(cov_mat[0, 0]),
+            ti.sqrt(cov_mat[1, 1]),
+            ti.sqrt(cov_mat[2, 2])
+        )
+
+        # Compute the rotation matrix from the quaternion (or rotation matrix)
+        rotation_mat = quat.as_rotation_mat3(self.rotation)
+        
+        # Transform the std_devs by the rotation matrix to account for Gaussian's orientation
+        rotated_std_devs = rotation_mat @ std_devs
+
+        # The bounding box is the center (position) plus/minus 3 times the standard deviation along each axis
+        box_min = self.position - 3 * rotated_std_devs
+        box_max = self.position + 3 * rotated_std_devs
+        return box_min, box_max
+
 
     @ti.func
     def eval(self, pos, dir):
@@ -112,6 +137,8 @@ class Gaussian:
             t = -B / (2 * A)
             result = ti.math.vec2(t, ti.math.inf)
         return result
+    
+    
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),
