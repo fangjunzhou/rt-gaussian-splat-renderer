@@ -33,8 +33,14 @@ class Bound:
                     size[1] * size[2] +
                     size[2] * size[0])
 
+    def area_py(self):
+        sx = self.p_max.x - self.p_min.x
+        sy = self.p_max.y - self.p_min.y
+        sz = self.p_max.z - self.p_min.z
+        return 2 * (sx * sy + sy * sz + sz * sx)
+
     @ti.func
-    def bounds_union(self, box):
+    def union(self, box):
         pp_min = ti.min(self.p_min, box.p_min)
         pp_max = ti.max(self.p_max, box.p_max)
         result = Bound()

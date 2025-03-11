@@ -9,7 +9,7 @@ import math
 
 @ti.dataclass
 class BVHNode:
-    bounds: Bound
+    bound: Bound
     left: ti.i32
     right: ti.i32
     prim_left: ti.i32
@@ -19,13 +19,13 @@ class BVHNode:
     @ti.func
     def init(
             self,
-            bounds=Bound(),
+            bound=Bound(),
             left=-1,
             right=-1,
             prim_left=-1,
             prim_right=-1,
-            depth=0):
-        self.bounds = bounds
+            depth=-1):
+        self.bound = bound
         self.left = left
         self.right = right
         self.prim_left = prim_left
@@ -41,4 +41,4 @@ class BVHNode:
         :return: hit information.
         :rtype: ti.math.vec2
         """
-        return self.bounds.hit(ray)
+        return self.bound.hit(ray)
