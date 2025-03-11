@@ -69,6 +69,13 @@ def main():
         type=int,
         default=4
     )
+    argparser.add_argument(
+        "-h",
+        "--bvh",
+        help="BVH size",
+        type=int,
+        default=512
+    )
     args = argparser.parse_args()
 
     # Camera parameters.
@@ -80,7 +87,8 @@ def main():
 
     # Load scene file.
     scene_path: pathlib.Path = args.open
-    scene = Scene()
+    bvh_size: int = args.bvh
+    scene = Scene(bvh_size)
     scene.load_file(scene_path)
     logger.info(f"Scene file loaded from {scene_path}.")
 
