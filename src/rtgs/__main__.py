@@ -14,7 +14,7 @@ from rtgs.utils.types import vec2i
 
 
 # Environment variable log level.
-env_level = os.getenv("LOG_LEVEL", "INFO").upper()
+env_level = os.getenv("LOG_LEVEL", "WARNING").upper()
 log_levels = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,

@@ -8,6 +8,7 @@ import taichi as ti
 from taichi import StructField
 import pandas as pd
 import pathlib
+from tqdm import tqdm
 import numpy as np
 from pyntcloud import PyntCloud
 from rtgs.gaussian import Gaussian
@@ -75,7 +76,7 @@ class Scene:
 
     def __init__(self, max_num_node: int = 128) -> None:
         self.gaussian_field = Gaussian.field(shape=())
-        self.max_num_node = 128
+        self.max_num_node = max_num_node
         self.bvh_field = BVHNode.field(shape=(max_num_node,))
 
     def load_file(self, path: pathlib.Path):
@@ -97,7 +98,7 @@ class Scene:
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
         opacities = points["opacity"].to_numpy()
         # Convert data with sigmoid.
-        scales = sigmoid(scales) * 10
+        scales = sigmoid(scales)
         colors = sigmoid(colors)
         opacities = sigmoid(opacities)
 
@@ -129,97 +130,6 @@ class Scene:
 
         build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
-
-        # @ti.kernel
-        # def split_bvh(node_id: ti.i32):
-        #     """Splits a BVH node once using SAH."""
-        #     node = self.bvh_field[node_id]
-        #
-        #     num_primitives = node.primitive_right - node.primitive_left
-        #     should_split = num_primitives >= 2
-        #
-        #     # Compute the bounding box of the node
-        #     bound = Bound()
-        #     for i in range(node.primitive_left, node.primitive_right):
-        #         gaussian = self.gaussian_field[i]
-        #         p_min, p_max = gaussian.bounding_box()
-        #         bound = bound.union(Bound(p_min, p_max))
-        #
-        #     node.bounds = bounds
-        #     best_axis = -1
-        #     best_threshold = 0.0
-        #     best_cost = float("inf")
-        #
-        #     if should_split:
-        #         for axis in range(3):
-        #             left_count = 0
-        #             right_count = 0
-        #             left_min = ti.Vector([1e10, 1e10, 1e10])
-        #             left_max = ti.Vector([-1e10, -1e10, -1e10])
-        #             right_min = ti.Vector([1e10, 1e10, 1e10])
-        #             right_max = ti.Vector([-1e10, -1e10, -1e10])
-        #
-        #             for i in range(node.primitive_left, node.primitive_right):
-        #                 gaussian = self.gaussian_field[i]
-        #                 gauss_min, gauss_max = gaussian.bounding_box()
-        #                 center = (gauss_min[axis] + gauss_max[axis]) * 0.5
-        #
-        #                 if center <= node.bounds.get_centroid()[axis]:
-        #                     left_min = ti.min(left_min, gauss_min)
-        #                     left_max = ti.max(left_max, gauss_max)
-        #                     left_count += 1
-        #                 else:
-        #                     right_min = ti.min(right_min, gauss_min)
-        #                     right_max = ti.max(right_max, gauss_max)
-        #                     right_count += 1
-        #
-        #             left_area = surface_area(
-        #                 left_min, left_max) if left_count > 0 else 0.0
-        #             right_area = surface_area(
-        #                 right_min, right_max) if right_count > 0 else 0.0
-        #             parent_area = surface_area(
-        #                 node.bounds.p_min, node.bounds.p_max)
-        #
-        #             left_prob = left_area / parent_area if parent_area > 0 else 0.0
-        #             right_prob = right_area / parent_area if parent_area > 0 else 0.0
-        #
-        #             cost = left_prob * left_count + right_prob * right_count
-        #
-        #             if cost < best_cost:
-        #                 best_cost = cost
-        #                 best_axis = axis
-        #                 best_threshold = node.bounds.get_centroid()[axis]
-        #
-        #         left_count = 0
-        #         if should_split:
-        #             for i in range(node.primitive_left, node.primitive_right):
-        #                 gaussian = self.gaussian_field[i]
-        #                 center = (gaussian.bounding_box()[
-        #                           0][best_axis] + gaussian.bounding_box()[1][best_axis]) * 0.5
-        #                 if center <= best_threshold:
-        #                     left_count += 1
-        #
-        #             if left_count == 0 or left_count == num_primitives:
-        #                 should_split = False
-        #
-        #         if should_split:
-        #             mid = node.primitive_left + left_count - 1
-        #             left_child_id = node_id * 2 + 1
-        #             right_child_id = node_id * 2 + 2
-        #
-        #             self.bvh_field[left_child_id].init(
-        #                 bounds=Bound(),
-        #                 primitive_left=node.primitive_left,
-        #                 primitive_right=mid,
-        #                 depth=node.depth + 1)
-        #             self.bvh_field[right_child_id].init(
-        #                 bounds=Bound(),
-        #                 primitive_left=mid + 1,
-        #                 primitive_right=node.primitive_right,
-        #                 depth=node.depth + 1)
-        #
-        #             self.bvh_field[node_id].left = left_child_id
-        #             self.bvh_field[node_id].right = right_child_id
 
         bbox_field = Bound.field(shape=(num_points,))
         bbox_buf = Bound.field(shape=(num_points,))
@@ -261,7 +171,6 @@ class Scene:
 
             for i in range(start, end):
                 gaussian = self.gaussian_field[i]
-                bound = gaussian.bounding_box()
                 center = gaussian.position[axis]
 
                 if center <= threshold:
@@ -283,10 +192,11 @@ class Scene:
             for i in range(num_left + num_right):
                 self.gaussian_field[start + i] = gaussian_buf[i]
 
-        def split_node(node_idx: int, top: int) -> bool:
+        def split_node(node_idx: int, top: int) -> Tuple[bool, int]:
+            logger.info(f"Splitting node {node_idx}.")
             node = self.bvh_field[node_id]
             if node.depth == -1:
-                return False
+                return False, top
 
             num_primitives = node.prim_right - node.prim_left
 
@@ -299,10 +209,11 @@ class Scene:
                 bbox_size = int((bbox_size + 1) / 2)
 
             node.bound = bbox_field[0]
+            logger.info(f"Current bounding box {bbox_field[0]}.")
 
             # Split node.
-            if num_primitives < 2:
-                return True
+            if num_primitives < 2 or top >= self.max_num_node:
+                return True, top
 
             best_axis = -1
             best_threshold = 0.0
@@ -313,8 +224,11 @@ class Scene:
                 axis_min = node.bound.p_min[axis]
                 axis_max = node.bound.p_max[axis]
                 for threshold in np.linspace(axis_min, axis_max, 8)[1:-1]:
+                    logger.info(f"Split at axis {axis}, threshold {threshold}.")
                     num_left, num_right = split(
                         node.prim_left, node.prim_right, axis, threshold)
+                    logger.info(
+                        f"Split {num_left} left children and {num_right} right children.")
                     load_left()
                     # Union bounding box.
                     bbox_size = num_left
@@ -322,6 +236,8 @@ class Scene:
                         reduction(bbox_size)
                         bbox_size = int((bbox_size + 1) / 2)
                     left_bbox = bbox_field[0]
+                    left_area = left_bbox.area_py()
+                    logger.info(f"Left bbox: {left_bbox}")
                     load_right()
                     # Union bounding box.
                     bbox_size = num_right
@@ -329,43 +245,52 @@ class Scene:
                         reduction(bbox_size)
                         bbox_size = int((bbox_size + 1) / 2)
                     right_bbox = bbox_field[0]
-                    left_area = left_bbox.area_py()
+                    logger.info(f"Right bbox: {right_bbox}")
                     right_area = right_bbox.area_py()
                     parent_area = node.bound.area_py()
+                    logger.info(
+                        f"Left area: {left_area}. Right area: {right_area}.")
 
                     left_prob = left_area / parent_area if parent_area > 0 else 0.0
                     right_prob = right_area / parent_area if parent_area > 0 else 0.0
 
                     cost = left_prob * num_left + right_prob * num_right
+                    logger.info(f"Cost {cost}.")
 
                     if cost < best_cost:
                         best_cost = cost
                         best_axis = axis
                         best_threshold = threshold
 
-                # Split node.
-                num_left, num_right = split(
-                    node.prim_left, node.prim_right, best_axis, best_threshold)
-                if num_left == 0 or num_right == 0:
-                    return True
+            logger.info(
+                f"Found optimal split with axis {best_axis}, and threshold {best_threshold}.")
 
-                # Reorder gaussian.
-                reorder(node.prim_left, node.prim_right, num_left, num_right)
-                mid = node.prim_left + num_left
-                left_idx = top
-                right_idx = top + 1
+            # Split node.
+            num_left, num_right = split(
+                node.prim_left, node.prim_right, best_axis, best_threshold)
+            if num_left == 0 or num_right == 0:
+                return True, top
 
-                self.bvh_field[left_idx].prim_left = node.prim_left
-                self.bvh_field[left_idx].prim_right = mid
-                self.bvh_field[left_idx].depth = node.depth + 1
-                self.bvh_field[right_idx].prim_left = mid
-                self.bvh_field[right_idx].prim_right = node.prim_right
-                self.bvh_field[right_idx].depth = node.depth + 1
+            logger.info(
+                f"Split to {num_left} left children and {num_right} right children.")
 
-                self.bvh_field[node_idx].left = left_idx
-                self.bvh_field[node_idx].right = right_idx
+            # Reorder gaussian.
+            reorder(node.prim_left, node.prim_right, num_left, num_right)
+            mid = node.prim_left + num_left
+            left_idx = top
+            right_idx = top + 1
 
-            return True
+            self.bvh_field[left_idx].prim_left = node.prim_left
+            self.bvh_field[left_idx].prim_right = mid
+            self.bvh_field[left_idx].depth = node.depth + 1
+            self.bvh_field[right_idx].prim_left = mid
+            self.bvh_field[right_idx].prim_right = node.prim_right
+            self.bvh_field[right_idx].depth = node.depth + 1
+
+            self.bvh_field[node_idx].left = left_idx
+            self.bvh_field[node_idx].right = right_idx
+
+            return True, top + 2
 
         @ti.kernel
         def init_bvh():
@@ -380,11 +305,11 @@ class Scene:
 
         init_bvh()
         top = 1
-        for node_id in range(self.max_num_node):
-            if split_node(node_id, top):
-                top += 2
-            else:
+        for node_id in tqdm(range(self.max_num_node)):
+            has_split, top = split_node(node_id, top)
+            if not has_split:
                 break
+        logging.info(f"Build {top} BVH nodes in total.")
 
     @ti.func
     def hit(self, ray):
@@ -398,7 +323,7 @@ class Scene:
         hit = SceneHit(gaussian_idx=-1)
         hit_t = ti.math.inf
 
-        stack = Stack(self.max_num_node)
+        stack = Stack()
         stack.push(0)
 
         while stack.size() != 0:
