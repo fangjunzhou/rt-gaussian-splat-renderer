@@ -105,8 +105,13 @@ class Gaussian:
         :return: gaussian color and alpha at pos from direction dir.
         :rtype: ti.math.vec4
         """
-        # TODO: Implement gaussian evaluation.
-        return ti.math.vec4(0)
+        # Evaluate gaussian
+        d = pos - self.position
+        cov_inv = ti.math.inverse(self.cov())
+        rho = ti.math.exp(- d.dot(cov_inv @ d))
+        alpha = self.opacity * rho
+        color = self.color
+        return ti.math.vec4(color.x, color.y, color.z, alpha)
 
     @ti.func
     def hit(self, ray):
@@ -119,12 +124,12 @@ class Gaussian:
             there's no solution, the result will be both ti.math.inf.
         :rtype: ti.math.vec2
         """
-        # TODO: Implement Ray-Gaussian intersection.
+        # Ray-Gaussian intersection.
+        # Intersection threshold.
+        thres = ti.math.e
         cov_inv = ti.math.inverse(self.cov())
         A = ray.direction.dot(cov_inv @ ray.direction)
         B = 2 * ray.direction.dot(cov_inv @ (ray.origin - self.position))
-        # determine the threshold for intersection
-        thres = 1e-5
         C = (ray.origin - self.position).dot(cov_inv @
                                              (ray.origin - self.position)) - thres
         delta = B**2 - 4 * A * C
