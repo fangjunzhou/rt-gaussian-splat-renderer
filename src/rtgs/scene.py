@@ -21,6 +21,7 @@ ti.init(arch=ti.gpu)
 
 
 logger = logging.getLogger(__name__)
+BALANCE_WEIGHT = 2
 
 
 @ti.dataclass
@@ -32,6 +33,7 @@ class SceneHit:
     """
     gaussian_idx: int
     intersections: ti.math.vec2
+    depth: int
 
 
 vec_stack = ti.types.vector(32, ti.i32)
@@ -223,12 +225,9 @@ class Scene:
             for axis in range(3):
                 axis_min = node.bound.p_min[axis]
                 axis_max = node.bound.p_max[axis]
-                for threshold in np.linspace(axis_min, axis_max, 8)[1:-1]:
-                    logger.info(f"Split at axis {axis}, threshold {threshold}.")
+                for threshold in np.linspace(axis_min, axis_max, 16)[1:-1]:
                     num_left, num_right = split(
                         node.prim_left, node.prim_right, axis, threshold)
-                    logger.info(
-                        f"Split {num_left} left children and {num_right} right children.")
                     load_left()
                     # Union bounding box.
                     bbox_size = num_left
@@ -237,7 +236,6 @@ class Scene:
                         bbox_size = int((bbox_size + 1) / 2)
                     left_bbox = bbox_field[0]
                     left_area = left_bbox.area_py()
-                    logger.info(f"Left bbox: {left_bbox}")
                     load_right()
                     # Union bounding box.
                     bbox_size = num_right
@@ -245,17 +243,14 @@ class Scene:
                         reduction(bbox_size)
                         bbox_size = int((bbox_size + 1) / 2)
                     right_bbox = bbox_field[0]
-                    logger.info(f"Right bbox: {right_bbox}")
                     right_area = right_bbox.area_py()
                     parent_area = node.bound.area_py()
-                    logger.info(
-                        f"Left area: {left_area}. Right area: {right_area}.")
 
                     left_prob = left_area / parent_area if parent_area > 0 else 0.0
                     right_prob = right_area / parent_area if parent_area > 0 else 0.0
 
-                    cost = left_prob * num_left + right_prob * num_right
-                    logger.info(f"Cost {cost}.")
+                    cost = left_prob * pow(num_left, BALANCE_WEIGHT) + \
+                        right_prob * pow(num_right, BALANCE_WEIGHT)
 
                     if cost < best_cost:
                         best_cost = cost
@@ -341,12 +336,18 @@ class Scene:
                         if intersections.x < ray.end and intersections.y > ray.start:
                             if intersections.x < hit_t:
                                 hit = SceneHit(
-                                    gaussian_idx=i, intersections=intersections)
+                                    gaussian_idx=i, intersections=intersections, depth=node.depth)
                                 hit_t = intersections.x
                 # Hit intermediate node.
                 else:
-                    # TODO: Push close child first.
-                    stack.push(node.left)
-                    stack.push(node.right)
+                    # TODO: Push close child last.
+                    left_hit = self.bvh_field[node.left].hit(ray)
+                    right_hit = self.bvh_field[node.right].hit(ray)
+                    if left_hit.x < right_hit.x:
+                        stack.push(node.right)
+                        stack.push(node.left)
+                    else:
+                        stack.push(node.left)
+                        stack.push(node.right)
 
         return hit
