@@ -1,6 +1,6 @@
 import taichi as ti
 import copy
-from rtgs.bounding_box import Bounds
+from rtgs.bounding_box import Bound
 import random
 import math
 
@@ -9,27 +9,27 @@ import math
 
 @ti.dataclass
 class BVHNode:
-    bounds: Bounds
+    bounds: Bound
     left: ti.i32
     right: ti.i32
-    primitive_left: ti.i32
-    primitive_right: ti.i32
+    prim_left: ti.i32
+    prim_right: ti.i32
     depth: ti.i32
 
     @ti.func
     def init(
             self,
-            bounds=Bounds(),
+            bounds=Bound(),
             left=-1,
             right=-1,
-            primitive_left=-1,
-            primitive_right=-1,
+            prim_left=-1,
+            prim_right=-1,
             depth=0):
         self.bounds = bounds
         self.left = left
         self.right = right
-        self.primitive_left = primitive_left
-        self.primitive_right = primitive_right
+        self.prim_left = prim_left
+        self.prim_right = prim_right
         self.depth = depth
 
     @ti.func
@@ -39,6 +39,6 @@ class BVHNode:
         :param ray: a camera ray.
         :type ray: Ray
         :return: hit information.
-        :rtype: bool
+        :rtype: ti.math.vec2
         """
         return self.bounds.hit(ray)
