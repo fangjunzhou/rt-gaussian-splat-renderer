@@ -100,7 +100,6 @@ def main():
     logger.info(f"Scene file loaded from {scene_path}.")
 
     # Setup camera.
-    # TODO: Support camera pose.
     cursor = np.array([0, 0, 0])
     cam_right = np.array([1, 0, 0])
     cam_up = np.array([0, 0, 1])

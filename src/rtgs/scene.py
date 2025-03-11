@@ -101,8 +101,8 @@ class Scene:
 
         # Extract Gaussian features.
         positions = points[["x", "y", "z"]].to_numpy()
-        # FIX: Potential quaternion scalar oder mismatch.
-        rotations = points[["rot_0", "rot_1", "rot_2", "rot_3"]].to_numpy()
+        # Convert quaternion order from scalar first to scalar last.
+        rotations = points[["rot_1", "rot_2", "rot_3", "rot_0"]].to_numpy()
         scales = points[["scale_0", "scale_1", "scale_2"]].to_numpy()
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
         opacities = points["opacity"].to_numpy()
@@ -347,7 +347,7 @@ class Scene:
                                 hit_t = intersections.x
                 # Hit intermediate node.
                 else:
-                    # TODO: Push close child last.
+                    # Push close child last.
                     left_hit = self.bvh_field[node.left].hit(ray)
                     right_hit = self.bvh_field[node.right].hit(ray)
                     if left_hit.x < right_hit.x:
