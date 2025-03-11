@@ -88,7 +88,7 @@ class Scene:
         self.balance_weight = balance_weight
         self.leaf_prim = leaf_prim
 
-    def load_file(self, path: pathlib.Path):
+    def load_file(self, path: pathlib.Path, scale: float = 1):
         """Load ply or splt file as a Gaussian splatting scene.
 
         :param path: ply or splt file path.
@@ -107,7 +107,7 @@ class Scene:
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
         opacities = points["opacity"].to_numpy()
         # Convert data with sigmoid.
-        scales = sigmoid(scales)
+        scales = sigmoid(scales) * scale
         colors = sigmoid(colors)
         opacities = sigmoid(opacities)
 

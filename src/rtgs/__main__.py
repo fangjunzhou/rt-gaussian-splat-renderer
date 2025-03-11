@@ -76,6 +76,12 @@ def main():
         type=int,
         default=512
     )
+    argparser.add_argument(
+        "--scale",
+        help="Global Gaussian Scale",
+        type=float,
+        default=1
+    )
     args = argparser.parse_args()
 
     # Camera parameters.
@@ -88,8 +94,9 @@ def main():
     # Load scene file.
     scene_path: pathlib.Path = args.open
     bvh_size: int = args.bvh
+    global_scale: float = args.scale
     scene = Scene(bvh_size, 2, 16)
-    scene.load_file(scene_path)
+    scene.load_file(scene_path, global_scale)
     logger.info(f"Scene file loaded from {scene_path}.")
 
     # Setup camera.
