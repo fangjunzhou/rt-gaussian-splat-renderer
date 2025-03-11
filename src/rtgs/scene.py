@@ -21,7 +21,6 @@ ti.init(arch=ti.gpu)
 
 
 logger = logging.getLogger(__name__)
-BALANCE_WEIGHT = 2
 
 
 @ti.dataclass
@@ -75,11 +74,19 @@ class Scene:
     # Implement Taichi BVH.
     bvh_field: StructField
     max_num_node: int
+    balance_weight: int
+    leaf_prim: int
 
-    def __init__(self, max_num_node: int = 128) -> None:
+    def __init__(
+            self,
+            max_num_node: int = 128,
+            balance_weight: int = 1,
+            leaf_prim=8) -> None:
         self.gaussian_field = Gaussian.field(shape=())
         self.max_num_node = max_num_node
         self.bvh_field = BVHNode.field(shape=(max_num_node,))
+        self.balance_weight = balance_weight
+        self.leaf_prim = leaf_prim
 
     def load_file(self, path: pathlib.Path):
         """Load ply or splt file as a Gaussian splatting scene.
@@ -214,7 +221,7 @@ class Scene:
             logger.info(f"Current bounding box {bbox_field[0]}.")
 
             # Split node.
-            if num_primitives < 2 or top >= self.max_num_node:
+            if num_primitives < self.leaf_prim or top >= self.max_num_node:
                 return True, top
 
             best_axis = -1
@@ -249,8 +256,8 @@ class Scene:
                     left_prob = left_area / parent_area if parent_area > 0 else 0.0
                     right_prob = right_area / parent_area if parent_area > 0 else 0.0
 
-                    cost = left_prob * pow(num_left, BALANCE_WEIGHT) + \
-                        right_prob * pow(num_right, BALANCE_WEIGHT)
+                    cost = left_prob * pow(num_left, self.balance_weight) + \
+                        right_prob * pow(num_right, self.balance_weight)
 
                     if cost < best_cost:
                         best_cost = cost

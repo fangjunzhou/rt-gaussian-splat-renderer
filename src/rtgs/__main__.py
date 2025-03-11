@@ -88,7 +88,7 @@ def main():
     # Load scene file.
     scene_path: pathlib.Path = args.open
     bvh_size: int = args.bvh
-    scene = Scene(bvh_size)
+    scene = Scene(bvh_size, 2, 16)
     scene.load_file(scene_path)
     logger.info(f"Scene file loaded from {scene_path}.")
 
