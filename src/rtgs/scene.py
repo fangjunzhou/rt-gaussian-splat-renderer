@@ -12,7 +12,7 @@ from rtgs.gaussian import Gaussian
 from rtgs.ray import Ray
 from rtgs.utils.math import sigmoid
 from rtgs.bvh import BVHNode
-from rtgs.bounding_box import Bounds
+from rtgs.bounding_box import Bound
 
 ti.init(arch=ti.gpu)
 
@@ -29,6 +29,31 @@ class SceneHit:
     """
     gaussian_idx: int
     intersections: ti.math.vec2
+
+
+@ti.dataclass
+class Stack:
+    stack: ti.Ndarray
+    top: int
+
+    def __init__(self, capacity) -> None:
+        self.stack = ti.ndarray(ti.i32, shape=(capacity,))
+        self.top = 0
+
+    @ti.func
+    def size(self):
+        return self.top
+
+    @ti.func
+    def push(self, idx):
+        self.stack[self.top] = idx
+        self.top += 1
+
+    @ti.func
+    def pop(self):
+        val = self.stack[self.top - 1]
+        self.top -= 1
+        return val
 
 
 @ti.data_oriented
@@ -227,47 +252,32 @@ class Scene:
         :rtype: SceneHit
         """
         hit = SceneHit(gaussian_idx=-1)
-        hit_pos = ti.math.inf
+        hit_t = ti.math.inf
 
-        curr = 0
-        stack_idx = 0
+        stack = Stack(self.max_num_node)
+        stack.push(0)
 
-        while curr != -1 or stack_idx > 0:
-            if curr != -1:
-                node = self.bvh_field[curr]
-
-                if not node.hit(ray):
-                    if stack_idx > 0:
-                        stack_idx -= 1
-                        curr = self.stack[stack_idx]
-                    else:
-                        curr = -1
-                    continue
-
-                if node.left == -1:
-                    for i in range(node.primitive_left, node.primitive_right):
+        while stack.size() != 0:
+            node = self.bvh_field[stack.pop()]
+            hit = node.hit(ray)
+            # Prune far child.
+            if hit.x > hit_t:
+                continue
+            if hit.x < hit.y:
+                # Base case: leaf node.
+                if node.left == -1 and node.right == -1:
+                    for i in range(node.prim_left, node.prim_right):
                         gaussian = self.gaussian_field[i]
                         intersections = gaussian.hit(ray)
                         if intersections.x < ray.end and intersections.y > ray.start:
-                            if intersections.x < hit_pos:
+                            if intersections.x < hit_t:
                                 hit = SceneHit(
                                     gaussian_idx=i, intersections=intersections)
-                                hit_pos = intersections.x
-                    curr = -1
-
+                                hit_t = intersections.x
+                # Hit intermediate node.
                 else:
-                    if node.right != -1:
-                        if stack_idx < self.max_node_num:
-                            self.stack[stack_idx] = node.right
-                            stack_idx += 1
-
-                    curr = node.left
-
-            else:
-                if stack_idx > 0:
-                    stack_idx -= 1
-                    curr = self.stack[stack_idx]
-                else:
-                    curr = -1
+                    # TODO: Push close child first.
+                    stack.push(node.left)
+                    stack.push(node.right)
 
         return hit
