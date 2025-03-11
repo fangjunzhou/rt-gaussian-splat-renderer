@@ -33,13 +33,16 @@ class SceneHit:
     intersections: ti.math.vec2
 
 
+vec_stack = ti.types.vector(32, ti.i32)
+
+
 @ti.dataclass
 class Stack:
-    stack: ti.Ndarray
+    stack: vec_stack
     top: int
 
-    def __init__(self, capacity) -> None:
-        self.stack = ti.ndarray(ti.i32, shape=(capacity,))
+    def __init__(self) -> None:
+        self.stack = vec_stack(0)
         self.top = 0
 
     @ti.func
@@ -348,7 +351,7 @@ class Scene:
 
                 # Reorder gaussian.
                 reorder(node.prim_left, node.prim_right, num_left, num_right)
-                mid = node.primitive_left + num_left
+                mid = node.prim_left + num_left
                 left_idx = top
                 right_idx = top + 1
 
@@ -377,7 +380,7 @@ class Scene:
 
         init_bvh()
         top = 1
-        for node_id in range(self.max_node_num):
+        for node_id in range(self.max_num_node):
             if split_node(node_id, top):
                 top += 2
             else:
@@ -400,11 +403,11 @@ class Scene:
 
         while stack.size() != 0:
             node = self.bvh_field[stack.pop()]
-            hit = node.hit(ray)
+            hit_inter = node.hit(ray)
             # Prune far child.
-            if hit.x > hit_t:
+            if hit_inter.x > hit_t:
                 continue
-            if hit.x < hit.y:
+            if hit_inter.x < hit_inter.y:
                 # Base case: leaf node.
                 if node.left == -1 and node.right == -1:
                     for i in range(node.prim_left, node.prim_right):
