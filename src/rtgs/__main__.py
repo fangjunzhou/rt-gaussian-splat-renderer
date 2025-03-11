@@ -70,7 +70,7 @@ def main():
         default=4
     )
     argparser.add_argument(
-        "-h",
+        "-v",
         "--bvh",
         help="BVH size",
         type=int,
