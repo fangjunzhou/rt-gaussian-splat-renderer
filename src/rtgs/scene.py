@@ -135,7 +135,7 @@ class Scene:
                 color = col_field[i]
                 opacity = opa_field[i]
                 self.gaussian_field[i].init(
-                    position, rotation, scale, color, opacity, i)
+                    position, rotation, scale, color, opacity)
 
         build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
