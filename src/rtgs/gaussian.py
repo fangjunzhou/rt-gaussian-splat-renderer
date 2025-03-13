@@ -3,8 +3,12 @@ Gaussian struct in Taichi.
 """
 
 import taichi as ti
+from rtgs.bounding_box import Bound
 from rtgs.ray import Ray
 import rtgs.utils.quaternion as quat
+
+
+BOUNDING_THRESHOLD = 1
 
 
 @ti.dataclass
@@ -32,7 +36,7 @@ class Gaussian:
              scale=ti.math.vec3(1, 1, 1),
              color=ti.math.vec3(1, 0, 1),
              opacity=1,
-            id=0
+             id=0
              ):
         """Taichi scope Gaussian initialization method.
 
@@ -70,28 +74,20 @@ class Gaussian:
         cov_mat = rotation_mat @ scale_mat \
             @ scale_mat.transpose() @ rotation_mat.transpose()
         return cov_mat
-    
+
     @ti.func
     def bounding_box(self):
-        """Compute the axis-aligned bounding box (AABB) for the Gaussian considering rotation."""
-        cov_mat = self.cov()  # Covariance matrix
-        std_devs = ti.math.vec3(
-            ti.sqrt(cov_mat[0, 0]),
-            ti.sqrt(cov_mat[1, 1]),
-            ti.sqrt(cov_mat[2, 2])
-        )
+        """Compute the axis-aligned bounding box (AABB) for the Gaussian
+        considering rotation.
 
-        # Compute the rotation matrix from the quaternion (or rotation matrix)
-        rotation_mat = quat.as_rotation_mat3(self.rotation)
-        
-        # Transform the std_devs by the rotation matrix to account for Gaussian's orientation
-        rotated_std_devs = rotation_mat @ std_devs
+        :return: bounding box for the Gaussian.
+        :rtype: Bound
+        """
+        # TODO: Implement more accurate ellipsoid bounding box.
+        major_axis = ti.math.max(self.scale.x, self.scale.y, self.scale.z)
+        dist = ti.math.vec3(major_axis)
 
-        # The bounding box is the center (position) plus/minus 3 times the standard deviation along each axis
-        box_min = self.position - 3 * rotated_std_devs
-        box_max = self.position + 3 * rotated_std_devs
-        return box_min, box_max
-
+        return Bound(self.position - dist, self.position + dist)
 
     @ti.func
     def eval(self, pos, dir):
@@ -104,8 +100,13 @@ class Gaussian:
         :return: gaussian color and alpha at pos from direction dir.
         :rtype: ti.math.vec4
         """
-        # TODO: Implement gaussian evaluation.
-        return ti.math.vec4(0)
+        # Evaluate gaussian
+        d = pos - self.position
+        cov_inv = ti.math.inverse(self.cov())
+        rho = ti.math.exp(- d.dot(cov_inv @ d))
+        alpha = self.opacity * rho
+        color = self.color
+        return ti.math.vec4(color.x, color.y, color.z, alpha)
 
     @ti.func
     def hit(self, ray):
@@ -118,27 +119,23 @@ class Gaussian:
             there's no solution, the result will be both ti.math.inf.
         :rtype: ti.math.vec2
         """
-        # TODO: Implement Ray-Gaussian intersection.
+        # Ray-Gaussian intersection.
         cov_inv = ti.math.inverse(self.cov())
         A = ray.direction.dot(cov_inv @ ray.direction)
         B = 2 * ray.direction.dot(cov_inv @ (ray.origin - self.position))
-        # determine the threshold for intersection
-        thres = 1e-5
         C = (ray.origin - self.position).dot(cov_inv @
-                                             (ray.origin - self.position)) - thres
+                                             (ray.origin - self.position)) - BOUNDING_THRESHOLD
         delta = B**2 - 4 * A * C
         result = ti.math.vec2(ti.math.inf, ti.math.inf)
 
         if delta > 0:
-            t1 = (-B + ti.sqrt(delta)) / (2 * A)
-            t2 = (-B - ti.sqrt(delta)) / (2 * A)
+            t1 = (-B - ti.sqrt(delta)) / (2 * A)
+            t2 = (-B + ti.sqrt(delta)) / (2 * A)
             result = ti.math.vec2(t1, t2)
         elif delta == 0:
             t = -B / (2 * A)
             result = ti.math.vec2(t, ti.math.inf)
         return result
-    
-    
 
 
 def new_gaussian(position: ti.math.vec3 = ti.math.vec3(0, 0, 0),

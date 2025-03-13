@@ -11,6 +11,7 @@ dependencies = [
     "pyntcloud>=0.3.1",
     "pyvista[all]>=0.44.2",
     "taichi>=1.7.3",
+    "tqdm>=4.67.1",
     "watchfiles>=1.0.4",
 ]
 
@@ -29,6 +30,7 @@ dev = [
     "autopep8>=2.3.2",
     "jupyterlab>=4.3.5",
     "ipywidgets>=8.1.5",
+    "debugpy>=1.8.12",
 ]
 
 [tool.pyright]
