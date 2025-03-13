@@ -22,7 +22,6 @@ class Gaussian:
     position: ti.math.vec3
     rotation: ti.math.vec4
     scale: ti.math.vec3
-    id: ti.i32
 
     color: ti.math.vec3
     opacity: ti.f32
@@ -36,7 +35,6 @@ class Gaussian:
              scale=ti.math.vec3(1, 1, 1),
              color=ti.math.vec3(1, 0, 1),
              opacity=1,
-             id=0
              ):
         """Taichi scope Gaussian initialization method.
 
