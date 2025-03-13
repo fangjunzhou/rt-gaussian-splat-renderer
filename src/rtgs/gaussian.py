@@ -84,10 +84,23 @@ class Gaussian:
         :rtype: Bound
         """
         # TODO: Implement more accurate ellipsoid bounding box.
-        major_axis = ti.math.max(self.scale.x, self.scale.y, self.scale.z)
-        dist = ti.math.vec3(major_axis)
+        rotation_mat = quat.as_rotation_mat3(self.rotation)
+        scale_mat = ti.math.mat3([
+            [self.scale.x, 0, 0],
+            [0, self.scale.y, 0],
+            [0, 0, self.scale.z]
+        ])
+        
+        axis_x = rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
+        axis_y = rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
+        axis_z = rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
 
-        return Bound(self.position - dist, self.position + dist)
+        abs_extents = ti.abs(axis_x) + ti.abs(axis_y) + ti.abs(axis_z)
+
+        min_bound = self.position - abs_extents
+        max_bound = self.position + abs_extents
+
+        return Bound(min_bound, max_bound)
 
     @ti.func
     def eval(self, pos, dir):
