@@ -3,8 +3,12 @@ Gaussian struct in Taichi.
 """
 
 import taichi as ti
+from rtgs.bounding_box import Bound
 from rtgs.ray import Ray
 import rtgs.utils.quaternion as quat
+
+
+BOUNDING_THRESHOLD = 1
 
 
 @ti.dataclass
@@ -30,7 +34,8 @@ class Gaussian:
              rotation=ti.math.vec4(0, 0, 0, 1),
              scale=ti.math.vec3(1, 1, 1),
              color=ti.math.vec3(1, 0, 1),
-             opacity=1):
+             opacity=1,
+             ):
         """Taichi scope Gaussian initialization method.
 
         :param position: gaussian center (mean).
@@ -69,6 +74,33 @@ class Gaussian:
         return cov_mat
 
     @ti.func
+    def bounding_box(self):
+        """Compute the axis-aligned bounding box (AABB) for the Gaussian
+        considering rotation.
+
+        :return: bounding box for the Gaussian.
+        :rtype: Bound
+        """
+        # TODO: Implement more accurate ellipsoid bounding box.
+        rotation_mat = quat.as_rotation_mat3(self.rotation)
+        scale_mat = ti.math.mat3([
+            [self.scale.x, 0, 0],
+            [0, self.scale.y, 0],
+            [0, 0, self.scale.z]
+        ])
+        
+        axis_x = rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
+        axis_y = rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
+        axis_z = rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
+
+        abs_extents = ti.abs(axis_x) + ti.abs(axis_y) + ti.abs(axis_z)
+
+        min_bound = self.position - abs_extents
+        max_bound = self.position + abs_extents
+
+        return Bound(min_bound, max_bound)
+
+    @ti.func
     def eval(self, pos, dir):
         """Evaluate gaussian color.
 
@@ -99,13 +131,11 @@ class Gaussian:
         :rtype: ti.math.vec2
         """
         # Ray-Gaussian intersection.
-        # Intersection threshold.
-        thres = ti.math.e
         cov_inv = ti.math.inverse(self.cov())
         A = ray.direction.dot(cov_inv @ ray.direction)
         B = 2 * ray.direction.dot(cov_inv @ (ray.origin - self.position))
         C = (ray.origin - self.position).dot(cov_inv @
-                                             (ray.origin - self.position)) - thres
+                                             (ray.origin - self.position)) - BOUNDING_THRESHOLD
         delta = B**2 - 4 * A * C
         result = ti.math.vec2(ti.math.inf, ti.math.inf)
 

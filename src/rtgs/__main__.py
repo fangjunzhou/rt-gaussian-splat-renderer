@@ -14,7 +14,7 @@ from rtgs.utils.types import vec2i
 
 
 # Environment variable log level.
-env_level = os.getenv("LOG_LEVEL", "INFO").upper()
+env_level = os.getenv("LOG_LEVEL", "WARNING").upper()
 log_levels = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,
@@ -69,6 +69,19 @@ def main():
         type=int,
         default=4
     )
+    argparser.add_argument(
+        "-v",
+        "--bvh",
+        help="BVH size",
+        type=int,
+        default=512
+    )
+    argparser.add_argument(
+        "--scale",
+        help="Global Gaussian Scale",
+        type=float,
+        default=1
+    )
     args = argparser.parse_args()
 
     # Camera parameters.
@@ -80,12 +93,13 @@ def main():
 
     # Load scene file.
     scene_path: pathlib.Path = args.open
-    scene = Scene()
-    scene.load_file(scene_path)
+    bvh_size: int = args.bvh
+    global_scale: float = args.scale
+    scene = Scene(bvh_size, 2, 16)
+    scene.load_file(scene_path, global_scale)
     logger.info(f"Scene file loaded from {scene_path}.")
 
     # Setup camera.
-    # TODO: Support camera pose.
     cursor = np.array([0, 0, 0])
     cam_right = np.array([1, 0, 0])
     cam_up = np.array([0, 0, 1])
