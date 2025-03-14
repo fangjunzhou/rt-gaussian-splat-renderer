@@ -16,6 +16,7 @@ from rtgs.ray import Ray
 from rtgs.utils.math import sigmoid
 from rtgs.bvh import BVHNode
 from rtgs.bounding_box import Bound
+from rtgs.utils.types import vec2i
 
 ti.init(arch=ti.gpu)
 
@@ -140,64 +141,126 @@ class Scene:
         build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
 
-        bbox_field = Bound.field(shape=(num_points,))
-        bbox_buf = Bound.field(shape=(num_points,))
-        left_gaussian_idx = ti.field(ti.i32, shape=(num_points,))
-        right_gaussian_idx = ti.field(ti.i32, shape=(num_points,))
+        NUM_THRESHOLD = 32
+
+        bbox_field = Bound.field(shape=(3, NUM_THRESHOLD, num_points))
+        bbox_buf = Bound.field(shape=(3, NUM_THRESHOLD, num_points))
+        left_gaussian_idx = ti.field(
+            ti.i32, shape=(
+                3, NUM_THRESHOLD, num_points))
+        right_gaussian_idx = ti.field(
+            ti.i32, shape=(
+                3, NUM_THRESHOLD, num_points))
         gaussian_buf = Gaussian.field(shape=(num_points,))
+
+        thresholds = ti.field(ti.f32, shape=(3, NUM_THRESHOLD))
+        num_lefts = ti.field(ti.i32, shape=(3, NUM_THRESHOLD))
+        num_rights = ti.field(ti.i32, shape=(3, NUM_THRESHOLD))
+        area_lefts = ti.field(ti.f32, shape=(3, NUM_THRESHOLD))
+        area_rights = ti.field(ti.f32, shape=(3, NUM_THRESHOLD))
 
         @ti.kernel
         def load_bbox_gaussian(start: int, end: int):
-            for i in range(end - start):
-                bbox_field[i] = self.gaussian_field[start + i].bounding_box()
+            """Load Gaussian bounding box from gaussian_field to bbox_field.
+
+            :param start: start index of the gaussian.
+            :param end: end index of the gaussian, not included.
+            """
+            size = end - start
+            for i in range(size):
+                bbox_field[0, 0, i] = self.gaussian_field[start + i] \
+                    .bounding_box()
+            for i in range(size, num_points):
+                bbox_field[0, 0, i] = self.gaussian_field[start + size - 1] \
+                    .bounding_box()
 
         @ti.kernel
-        def load_left():
-            for i in left_gaussian_idx:
-                bbox_field[i] = self.gaussian_field[left_gaussian_idx[i]
-                                                    ].bounding_box()
-
-        @ti.kernel
-        def load_right():
-            for i in right_gaussian_idx:
-                bbox_field[i] = self.gaussian_field[right_gaussian_idx[i]
-                                                    ].bounding_box()
-
-        @ti.kernel
-        def reduction(size: int):
-            for i in range(int(size / 2)):
-                bbox_buf[i] = bbox_field[i * 2].union(bbox_field[i * 2 + 1])
-            if size % 2 == 1:
-                bbox_buf[int(size / 2)] = bbox_field[size - 1]
-            for i in range(int((size + 1) / 2)):
-                bbox_field[i] = bbox_buf[i]
-
-        @ti.kernel
-        def split(start: int, end: int, axis: int,
-                  threshold: float) -> Tuple[int, int]:
-            num_left = 0
-            num_right = 0
-
-            for i in range(start, end):
-                gaussian = self.gaussian_field[i]
-                center = gaussian.position[axis]
-
-                if center <= threshold:
-                    idx = ti.atomic_add(num_left, 1)
-                    left_gaussian_idx[idx] = i
+        def load_left(max_size: int):
+            for i, j, k in ti.ndrange(3, NUM_THRESHOLD, max_size):
+                if k < num_lefts[i, j]:
+                    bbox_field[i,
+                               j,
+                               k] = self.gaussian_field[left_gaussian_idx[i,
+                                                                          j,
+                                                                          k]].bounding_box()
                 else:
-                    idx = ti.atomic_add(num_right, 1)
-                    right_gaussian_idx[idx] = i
-
-            return num_left, num_right
+                    bbox_field[i,
+                               j,
+                               k] = self.gaussian_field[left_gaussian_idx[i,
+                                                                          j,
+                                                                          num_lefts[i,
+                                                                                    j] - 1]].bounding_box()
 
         @ti.kernel
-        def reorder(start: int, end: int, num_left: int, num_right: int):
+        def load_right(max_size: int):
+            for i, j, k in ti.ndrange(3, NUM_THRESHOLD, max_size):
+                if k < num_rights[i, j]:
+                    bbox_field[i,
+                               j,
+                               k] = self.gaussian_field[right_gaussian_idx[i,
+                                                                           j,
+                                                                           k]].bounding_box()
+                else:
+                    bbox_field[i,
+                               j,
+                               k] = self.gaussian_field[right_gaussian_idx[i,
+                                                                           j,
+                                                                           num_rights[i,
+                                                                                      j] - 1]].bounding_box()
+
+        @ti.kernel
+        def reduction(max_size: int):
+            for i, j, k in ti.ndrange(
+                3, NUM_THRESHOLD, int(
+                    (max_size + 1) / 2)):
+                bbox_buf[i, j, k] = bbox_field[i, j, k * \
+                    2].union(bbox_field[i, j, k * 2 + 1])
+            for i, j in ti.ndrange(3, NUM_THRESHOLD):
+                bbox_buf[i, j, int((max_size + 1) / 2)
+                         ] = bbox_field[i, j, max_size - 1]
+            for i, j, k in ti.ndrange(
+                3, NUM_THRESHOLD, int(
+                    (max_size + 1) / 2) + 1):
+                bbox_field[i, j, k] = bbox_buf[i, j, k]
+
+        @ti.kernel
+        def area_left():
+            for i, j in ti.ndrange(3, NUM_THRESHOLD):
+                area_lefts[i, j] = bbox_field[i, j, 0].area()
+
+        @ti.kernel
+        def area_right():
+            for i, j in ti.ndrange(3, NUM_THRESHOLD):
+                area_rights[i, j] = bbox_field[i, j, 0].area()
+
+        @ti.kernel
+        def split(start: int, end: int):
+            # Clear pointer.
+            for i, j in ti.ndrange(3, NUM_THRESHOLD):
+                num_lefts[i, j] = 0
+                num_rights[i, j] = 0
+
+            # Split gaussian.
+            for i, j, k in ti.ndrange(3, NUM_THRESHOLD, (start, end)):
+                gaussian = self.gaussian_field[k]
+                center = gaussian.position[i]
+
+                if center <= thresholds[i, j]:
+                    idx = ti.atomic_add(num_lefts[i, j], 1)
+                    left_gaussian_idx[i, j, idx] = k
+                else:
+                    idx = ti.atomic_add(num_rights[i, j], 1)
+                    right_gaussian_idx[i, j, idx] = k
+
+        @ti.kernel
+        def reorder(start: int, end: int, axis: int, threshold: int):
+            num_left = num_lefts[axis, threshold]
+            num_right = num_rights[axis, threshold]
             for i in range(num_left):
-                gaussian_buf[i] = self.gaussian_field[left_gaussian_idx[i]]
+                gaussian_buf[i] = self.gaussian_field[left_gaussian_idx[axis, threshold, i]]
             for i in range(num_right):
                 gaussian_buf[num_left +
-                             i] = self.gaussian_field[right_gaussian_idx[i]]
+                             i] = self.gaussian_field[right_gaussian_idx[axis, threshold, i]]
             for i in range(num_left + num_right):
                 self.gaussian_field[start + i] = gaussian_buf[i]
 
@@ -217,70 +280,72 @@ class Scene:
                 reduction(bbox_size)
                 bbox_size = int((bbox_size + 1) / 2)
 
-            node.bound = bbox_field[0]
-            logger.info(f"Current bounding box {bbox_field[0]}.")
+            node.bound = bbox_field[0, 0, 0]
+            logger.info(f"Current bounding box {bbox_field[0, 0, 0]}.")
 
             # Split node.
             if num_primitives < self.leaf_prim or top >= self.max_num_node:
                 return True, top
 
-            best_axis = -1
-            best_threshold = 0.0
-            best_cost = float("inf")
-
             # Find optimal split.
-            for axis in range(3):
-                axis_min = node.bound.p_min[axis]
-                axis_max = node.bound.p_max[axis]
-                for threshold in np.linspace(axis_min, axis_max, 16)[1:-1]:
-                    num_left, num_right = split(
-                        node.prim_left, node.prim_right, axis, threshold)
-                    load_left()
-                    # Union bounding box.
-                    bbox_size = num_left
-                    while bbox_size > 1:
-                        reduction(bbox_size)
-                        bbox_size = int((bbox_size + 1) / 2)
-                    left_bbox = bbox_field[0]
-                    left_area = left_bbox.area_py()
-                    load_right()
-                    # Union bounding box.
-                    bbox_size = num_right
-                    while bbox_size > 1:
-                        reduction(bbox_size)
-                        bbox_size = int((bbox_size + 1) / 2)
-                    right_bbox = bbox_field[0]
-                    right_area = right_bbox.area_py()
-                    parent_area = node.bound.area_py()
+            # Load thresholds.
+            p_min = node.bound.p_min
+            p_max = node.bound.p_max
+            thresholds.from_numpy(
+                np.linspace(
+                    [p_min[0], p_min[1], p_min[2]],
+                    [p_max[0], p_max[1], p_max[2]],
+                    NUM_THRESHOLD + 2,
+                    axis=-1
+                ).astype(np.float32)[:, 1:-1]
+            )
+            split(node.prim_left, node.prim_right)
+            # Calculate left bounding boxes.
+            bbox_size = int(np.max(num_lefts.to_numpy()))
+            load_left(bbox_size)
+            while bbox_size > 1:
+                reduction(bbox_size)
+                bbox_size = int((bbox_size + 1) / 2)
+            area_left()
+            left_area = area_lefts.to_numpy()
+            # Calculate left bounding boxes.
+            bbox_size = int(np.max(num_rights.to_numpy()))
+            load_right(bbox_size)
+            while bbox_size > 1:
+                reduction(bbox_size)
+                bbox_size = int((bbox_size + 1) / 2)
+            area_right()
+            right_area = area_rights.to_numpy()
 
-                    left_prob = left_area / parent_area if parent_area > 0 else 0.0
-                    right_prob = right_area / parent_area if parent_area > 0 else 0.0
+            parent_area = node.bound.area_py()
 
-                    cost = left_prob * pow(num_left, self.balance_weight) + \
-                        right_prob * pow(num_right, self.balance_weight)
+            left_prob = (left_area / parent_area).astype(np.float64)
+            right_prob = (right_area / parent_area).astype(np.float64)
 
-                    if cost < best_cost:
-                        best_cost = cost
-                        best_axis = axis
-                        best_threshold = threshold
+            costs = left_prob * num_lefts.to_numpy().astype(np.float64) ** self.balance_weight + \
+                right_prob * num_rights.to_numpy().astype(np.float64) ** self.balance_weight
+
+            axis, threshold = np.unravel_index(np.argmin(costs), costs.shape)
+            axis, threshold = int(axis), int(threshold)
 
             logger.info(
-                f"Found optimal split with axis {best_axis}, and threshold {best_threshold}.")
+                f"Found optimal split with axis {axis}, and threshold {threshold}.")
 
-            # Split node.
-            num_left, num_right = split(
-                node.prim_left, node.prim_right, best_axis, best_threshold)
-            if num_left == 0 or num_right == 0:
+            # Empty child.
+            if num_lefts[axis,
+                         threshold] == 0 or num_rights[axis,
+                                                       threshold] == 0:
                 return True, top
 
-            logger.info(
-                f"Split to {num_left} left children and {num_right} right children.")
-
             # Reorder gaussian.
-            reorder(node.prim_left, node.prim_right, num_left, num_right)
-            mid = node.prim_left + num_left
+            reorder(node.prim_left, node.prim_right, axis, threshold)
+            mid = node.prim_left + num_lefts[axis, threshold]
             left_idx = top
             right_idx = top + 1
+
+            logger.info(f"Split to {num_lefts[axis,
+                                              threshold]} left children and {num_rights[axis,
+                                                                                        threshold]} right children.")
 
             self.bvh_field[left_idx].prim_left = node.prim_left
             self.bvh_field[left_idx].prim_right = mid
@@ -307,11 +372,18 @@ class Scene:
 
         init_bvh()
         top = 1
+        max_node_size = 0
         for node_id in tqdm(range(self.max_num_node)):
             has_split, top = split_node(node_id, top)
+            if self.bvh_field[node_id].left == - \
+                    1 and self.bvh_field[node_id].right == -1:
+                node_size = self.bvh_field[node_id].prim_right - \
+                    self.bvh_field[node_id].prim_left
+                max_node_size = max(max_node_size, node_size)
             if not has_split:
                 break
-        logging.info(f"Build {top} BVH nodes in total.")
+        print(
+            f"Build {top} BVH nodes in total. Max leaf node size is {max_node_size}.")
 
     @ti.func
     def hit(self, ray):
