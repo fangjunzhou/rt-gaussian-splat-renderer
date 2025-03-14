@@ -89,14 +89,17 @@ class Gaussian:
             [0, 0, self.scale.z]
         ])
         
-        axis_x = rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
-        axis_y = rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
-        axis_z = rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
+        # six endpoints of the gaussian
+        p1 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
+        p2 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
+        p3 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
+        p4 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
+        p5 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
+        p6 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
 
-        abs_extents = ti.abs(axis_x) + ti.abs(axis_y) + ti.abs(axis_z)
-
-        min_bound = self.position - abs_extents
-        max_bound = self.position + abs_extents
+        # compute the bounding box for the six points
+        min_bound = ti.min(p1, p2, p3, p4, p5, p6)
+        max_bound = ti.max(p1, p2, p3, p4, p5, p6)
 
         return Bound(min_bound, max_bound)
 
