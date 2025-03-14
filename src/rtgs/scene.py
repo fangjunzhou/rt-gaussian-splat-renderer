@@ -141,7 +141,7 @@ class Scene:
         build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
 
-        NUM_THRESHOLD = 14
+        NUM_THRESHOLD = 32
 
         bbox_field = Bound.field(shape=(3, NUM_THRESHOLD, num_points))
         bbox_buf = Bound.field(shape=(3, NUM_THRESHOLD, num_points))
@@ -153,7 +153,7 @@ class Scene:
                 3, NUM_THRESHOLD, num_points))
         gaussian_buf = Gaussian.field(shape=(num_points,))
 
-        thresholds = ti.field(ti.i32, shape=(3, NUM_THRESHOLD))
+        thresholds = ti.field(ti.f32, shape=(3, NUM_THRESHOLD))
         num_lefts = ti.field(ti.i32, shape=(3, NUM_THRESHOLD))
         num_rights = ti.field(ti.i32, shape=(3, NUM_THRESHOLD))
         area_lefts = ti.field(ti.f32, shape=(3, NUM_THRESHOLD))
@@ -186,8 +186,10 @@ class Scene:
                 else:
                     bbox_field[i,
                                j,
-                               k] = self.gaussian_field[num_lefts[i,
-                                                                  j] - 1].bounding_box()
+                               k] = self.gaussian_field[left_gaussian_idx[i,
+                                                                          j,
+                                                                          num_lefts[i,
+                                                                                    j] - 1]].bounding_box()
 
         @ti.kernel
         def load_right(max_size: int):
@@ -201,8 +203,10 @@ class Scene:
                 else:
                     bbox_field[i,
                                j,
-                               k] = self.gaussian_field[num_rights[i,
-                                                                   j] - 1].bounding_box()
+                               k] = self.gaussian_field[right_gaussian_idx[i,
+                                                                           j,
+                                                                           num_rights[i,
+                                                                                      j] - 1]].bounding_box()
 
         @ti.kernel
         def reduction(max_size: int):
@@ -211,9 +215,12 @@ class Scene:
                     (max_size + 1) / 2)):
                 bbox_buf[i, j, k] = bbox_field[i, j, k * \
                     2].union(bbox_field[i, j, k * 2 + 1])
+            for i, j in ti.ndrange(3, NUM_THRESHOLD):
+                bbox_buf[i, j, int((max_size + 1) / 2)
+                         ] = bbox_field[i, j, max_size - 1]
             for i, j, k in ti.ndrange(
                 3, NUM_THRESHOLD, int(
-                    (max_size + 1) / 2)):
+                    (max_size + 1) / 2) + 1):
                 bbox_field[i, j, k] = bbox_buf[i, j, k]
 
         @ti.kernel
@@ -280,10 +287,6 @@ class Scene:
             if num_primitives < self.leaf_prim or top >= self.max_num_node:
                 return True, top
 
-            best_axis = -1
-            best_threshold = 0.0
-            best_cost = float("inf")
-
             # Find optimal split.
             # Load thresholds.
             p_min = node.bound.p_min
@@ -292,9 +295,9 @@ class Scene:
                 np.linspace(
                     [p_min[0], p_min[1], p_min[2]],
                     [p_max[0], p_max[1], p_max[2]],
-                    NUM_THRESHOLD,
+                    NUM_THRESHOLD + 2,
                     axis=-1
-                ).astype(np.float32)
+                ).astype(np.float32)[:, 1:-1]
             )
             split(node.prim_left, node.prim_right)
             # Calculate left bounding boxes.
@@ -316,13 +319,13 @@ class Scene:
 
             parent_area = node.bound.area_py()
 
-            left_prob = left_area / parent_area
-            right_prob = right_area / parent_area
+            left_prob = (left_area / parent_area).astype(np.float64)
+            right_prob = (right_area / parent_area).astype(np.float64)
 
-            costs = left_prob * np.pow(num_lefts.to_numpy(), self.balance_weight) + \
-                right_prob * np.pow(num_rights.to_numpy(), self.balance_weight)
+            costs = left_prob * num_lefts.to_numpy().astype(np.float64) ** self.balance_weight + \
+                right_prob * num_rights.to_numpy().astype(np.float64) ** self.balance_weight
 
-            axis, threshold = np.unravel_index(np.argmax(costs), costs.shape)
+            axis, threshold = np.unravel_index(np.argmin(costs), costs.shape)
             axis, threshold = int(axis), int(threshold)
 
             logger.info(
@@ -333,6 +336,10 @@ class Scene:
             mid = node.prim_left + num_lefts[axis, threshold]
             left_idx = top
             right_idx = top + 1
+
+            logger.info(f"Split to {num_lefts[axis,
+                                              threshold]} left children and {num_rights[axis,
+                                                                                        threshold]} right children.")
 
             self.bvh_field[left_idx].prim_left = node.prim_left
             self.bvh_field[left_idx].prim_right = mid
