@@ -17,6 +17,7 @@ class RayTracer:
     # Render buffer.
     sample_buf: ti.Field
     attenuation_buf: ti.Field
+    num_steps: ti.i32
     num_samples: ti.i32
     # Display buffer.
     disp_buf: ti.Field
@@ -31,6 +32,7 @@ class RayTracer:
 
         self.sample_buf = ti.field(ti.math.vec3, shape=(buf_size.x, buf_size.y))
         self.attenuation_buf = ti.field(ti.f32, shape=(buf_size.x, buf_size.y))
+        self.num_steps = 0
         self.num_samples = 0
         self.disp_buf = ti.field(ti.math.vec3, shape=(buf_size.x, buf_size.y))
 
@@ -40,13 +42,16 @@ class RayTracer:
         :param depth: ray depth (the maximum number of gaussian hit per ray).
         """
         # Reset attenuation and camera ray.
-        self.clear_attenuation()
-        self.camera.generate_ray_field(
-            self.camera.position, self.camera.rotation)
+        if self.num_steps == 0:
+            self.clear_attenuation()
+            self.camera.generate_ray_field(
+                self.camera.position, self.camera.rotation)
         # Ray trace depth steps.
-        for _ in range(depth):
-            self.sample_step()
-        self.num_samples += 1
+        self.sample_step()
+        self.num_steps += 1
+        if self.num_steps >= depth:
+            self.num_steps = 0
+            self.num_samples += 1
 
     @ti.kernel
     def clear_sample(self):
@@ -61,10 +66,15 @@ class RayTracer:
             self.attenuation_buf[i, j] = 1
 
     @ti.kernel
-    def generate_disp_buffer(self, num_samples: ti.i32):
+    def generate_disp_buffer(
+            self,
+            num_samples: ti.i32,
+            num_steps: ti.i32,
+            num_depth: ti.i32):
         """Generate display buffer from sample buffer (average n samples)."""
         for i, j in self.disp_buf:
-            self.disp_buf[i, j] = self.sample_buf[i, j] / num_samples
+            self.disp_buf[i, j] = self.sample_buf[i, j] / \
+                (num_samples + float(num_steps) / float(num_depth))
 
     @ti.kernel
     def sample_step(self):

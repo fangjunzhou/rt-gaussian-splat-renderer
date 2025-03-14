@@ -95,7 +95,7 @@ def main():
     scene_path: pathlib.Path = args.open
     bvh_size: int = args.bvh
     global_scale: float = args.scale
-    scene = Scene(bvh_size, 2, 16)
+    scene = Scene(bvh_size, 4, 16)
     scene.load_file(scene_path, global_scale)
     logger.info(f"Scene file loaded from {scene_path}.")
 
@@ -172,6 +172,7 @@ def main():
                     float(mouse_event.delta.y)  # pyright: ignore
                 cam_right, cam_up = update_camera_pose(theta, phi, r)
                 ray_tracer.clear_sample()
+                ray_tracer.num_steps = 0
                 ray_tracer.num_samples = 0
         if panning or moving:
             nx, ny = gui.get_cursor_pos()
@@ -191,12 +192,14 @@ def main():
                     )
                 cam_right, cam_up = update_camera_pose(theta, phi, r)
                 ray_tracer.clear_sample()
+                ray_tracer.num_steps = 0
                 ray_tracer.num_samples = 0
             mouse_x, mouse_y = nx, ny
         # Take samples.
         if ray_tracer.num_samples < num_sample:
             ray_tracer.sample(num_depth)
-            ray_tracer.generate_disp_buffer(ray_tracer.num_samples)
+            ray_tracer.generate_disp_buffer(
+                ray_tracer.num_samples, ray_tracer.num_steps, num_depth)
         gui.set_image(ray_tracer.disp_buf)
         gui.show()
 

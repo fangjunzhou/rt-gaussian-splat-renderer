@@ -331,6 +331,12 @@ class Scene:
             logger.info(
                 f"Found optimal split with axis {axis}, and threshold {threshold}.")
 
+            # Empty child.
+            if num_lefts[axis,
+                         threshold] == 0 or num_rights[axis,
+                                                       threshold] == 0:
+                return True, top
+
             # Reorder gaussian.
             reorder(node.prim_left, node.prim_right, axis, threshold)
             mid = node.prim_left + num_lefts[axis, threshold]
@@ -366,11 +372,18 @@ class Scene:
 
         init_bvh()
         top = 1
+        max_node_size = 0
         for node_id in tqdm(range(self.max_num_node)):
             has_split, top = split_node(node_id, top)
+            if self.bvh_field[node_id].left == - \
+                    1 and self.bvh_field[node_id].right == -1:
+                node_size = self.bvh_field[node_id].prim_right - \
+                    self.bvh_field[node_id].prim_left
+                max_node_size = max(max_node_size, node_size)
             if not has_split:
                 break
-        logging.info(f"Build {top} BVH nodes in total.")
+        print(
+            f"Build {top} BVH nodes in total. Max leaf node size is {max_node_size}.")
 
     @ti.func
     def hit(self, ray):
