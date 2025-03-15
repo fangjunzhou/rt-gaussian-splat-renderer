@@ -14,7 +14,7 @@ from rtgs.utils.types import vec2i
 
 
 # Environment variable log level.
-env_level = os.getenv("LOG_LEVEL", "INFO").upper()
+env_level = os.getenv("LOG_LEVEL", "WARNING").upper()
 log_levels = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,
@@ -69,6 +69,19 @@ def main():
         type=int,
         default=4
     )
+    argparser.add_argument(
+        "-v",
+        "--bvh",
+        help="BVH size",
+        type=int,
+        default=512
+    )
+    argparser.add_argument(
+        "--scale",
+        help="Global Gaussian Scale",
+        type=float,
+        default=1
+    )
     args = argparser.parse_args()
 
     # Camera parameters.
@@ -80,12 +93,14 @@ def main():
 
     # Load scene file.
     scene_path: pathlib.Path = args.open
-    scene = Scene()
-    scene.load_file(scene_path)
+    bvh_size: int = args.bvh
+    global_scale: float = args.scale
+    scene = Scene(bvh_size, 4, 16)
+    scene.load_file(scene_path, global_scale)
     logger.info(f"Scene file loaded from {scene_path}.")
 
     # Setup camera.
-    # TODO: Support camera pose.
+    global_quat = quaternion.from_float_array([1, 0, 0, 0])
     cursor = np.array([0, 0, 0])
     cam_right = np.array([1, 0, 0])
     cam_up = np.array([0, 0, 1])
@@ -117,7 +132,12 @@ def main():
             (-look).tolist()
         ]).T
         quat = quaternion.from_rotation_matrix(rot)
-        camera.position = ti.math.vec3(pos + cursor)
+        global_mat = quaternion.as_rotation_matrix(global_quat)
+        quat = global_quat * quat
+        pos = global_mat @ (pos + cursor)
+        # cam_right = global_mat @ cam_right
+        # cam_up = global_mat @ cam_up
+        camera.position = ti.math.vec3(pos)
         camera.rotation = ti.math.vec4(quat.x, quat.y, quat.z, quat.w)
         return cam_right, cam_up
 
@@ -138,27 +158,76 @@ def main():
     moving = False
     move_sensitivity = 2
     mouse_x, mouse_y = 0, 0
+
+    rot_x = gui.slider(
+        "Rot X",
+        0,
+        np.pi *
+        2,
+        step=np.pi /
+        180)  # pyright: ignore
+    rot_y = gui.slider(
+        "Rot Y",
+        0,
+        np.pi *
+        2,
+        step=np.pi /
+        180)  # pyright: ignore
+    rot_z = gui.slider(
+        "Rot Z",
+        0,
+        np.pi *
+        2,
+        step=np.pi /
+        180)  # pyright: ignore
+    old_x = rot_x.value
+    old_y = rot_y.value
+    old_z = rot_z.value
+    enable_panning = True
+    panning_button = gui.button("Enable/Disable Panning")
+
     while gui.running:
-        mouse_events = gui.get_events(ti.GUI.LMB, ti.GUI.RMB, ti.GUI.WHEEL)
-        for mouse_event in mouse_events:
-            if mouse_event.key == ti.GUI.LMB:
-                if mouse_event.type == ti.GUI.PRESS:
+        events = gui.get_events(
+            ti.GUI.LMB,
+            ti.GUI.RMB,
+            ti.GUI.WHEEL,
+            panning_button)
+        for event in events:
+            if event.key == panning_button:
+                enable_panning = not enable_panning
+            if event.key == ti.GUI.LMB:
+                if event.type == ti.GUI.PRESS and enable_panning:
                     panning = True
                     mouse_x, mouse_y = gui.get_cursor_pos()
-                elif mouse_event.type == ti.GUI.RELEASE:
+                elif event.type == ti.GUI.RELEASE:
                     panning = False
-            if mouse_event.key == ti.GUI.RMB:
-                if mouse_event.type == ti.GUI.PRESS:
+            if event.key == ti.GUI.RMB:
+                if event.type == ti.GUI.PRESS:
                     moving = True
                     mouse_x, mouse_y = gui.get_cursor_pos()
-                elif mouse_event.type == ti.GUI.RELEASE:
+                elif event.type == ti.GUI.RELEASE:
                     moving = False
-            if mouse_event.key == ti.GUI.WHEEL:
+            if event.key == ti.GUI.WHEEL:
                 r += scroll_sensitivity * r * \
-                    float(mouse_event.delta.y)  # pyright: ignore
+                    float(event.delta.y)  # pyright: ignore
                 cam_right, cam_up = update_camera_pose(theta, phi, r)
                 ray_tracer.clear_sample()
+                ray_tracer.num_steps = 0
                 ray_tracer.num_samples = 0
+        curr_x = rot_x.value
+        curr_y = rot_y.value
+        curr_z = rot_z.value
+        rotating = old_x != curr_x or old_y != curr_y or old_z != curr_z
+        old_x, old_y, old_z = curr_x, curr_y, curr_z
+        if rotating:
+            quat_x = quaternion.from_rotation_vector([rot_x.value, 0, 0])
+            quat_y = quaternion.from_rotation_vector([0, rot_y.value, 0])
+            quat_z = quaternion.from_rotation_vector([0, 0, rot_z.value])
+            global_quat = quat_z * quat_y * quat_x
+            cam_right, cam_up = update_camera_pose(theta, phi, r)
+            ray_tracer.clear_sample()
+            ray_tracer.num_steps = 0
+            ray_tracer.num_samples = 0
         if panning or moving:
             nx, ny = gui.get_cursor_pos()
             dx, dy = nx - mouse_x, ny - mouse_y
@@ -177,12 +246,14 @@ def main():
                     )
                 cam_right, cam_up = update_camera_pose(theta, phi, r)
                 ray_tracer.clear_sample()
+                ray_tracer.num_steps = 0
                 ray_tracer.num_samples = 0
             mouse_x, mouse_y = nx, ny
         # Take samples.
         if ray_tracer.num_samples < num_sample:
             ray_tracer.sample(num_depth)
-            ray_tracer.generate_disp_buffer(ray_tracer.num_samples)
+            ray_tracer.generate_disp_buffer(
+                ray_tracer.num_samples, ray_tracer.num_steps, num_depth)
         gui.set_image(ray_tracer.disp_buf)
         gui.show()
 
