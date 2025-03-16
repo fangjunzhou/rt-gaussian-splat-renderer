@@ -151,5 +151,12 @@ $$
     Y_{2}^{0} &= \frac{1}{4} \sqrt{\frac{5}{\pi}} (3z^{2} - 1) \\
     Y_{2}^{1} &= \frac{1}{2} \sqrt{\frac{15}{\pi}} xz \\
     Y_{2}^{2} &= \frac{1}{4} \sqrt{\frac{15}{\pi}} (x^{2} - y^{2}) \\
+    Y_{3}^{-3} &= \frac{1}{4} \sqrt{\frac{35}{2\pi}} y(3x^{2} - y^{2}) \\
+    Y_{3}^{-2} &= \frac{1}{2} \sqrt{\frac{105}{\pi}} xyz \\
+    Y_{3}^{-1} &= \frac{1}{4} \sqrt{\frac{21}{2\pi}} y(5z^{2} - 1) \\
+    Y_{3}^{0} &= \frac{1}{4} \sqrt{\frac{7}{\pi}} (5z^{3} - 3z) \\
+    Y_{3}^{1} &= \frac{1}{4} \sqrt{\frac{21}{2\pi}} x(5z^{2} - 1) \\
+    Y_{3}^{2} &= \frac{1}{4} \sqrt{\frac{105}{\pi}} (x^{2} - y^{2})z \\
+    Y_{3}^{3} &= \frac{1}{4} \sqrt{\frac{35}{2\pi}} x(x^{2} - 3y^{2})
 \end{align*}
 $$
