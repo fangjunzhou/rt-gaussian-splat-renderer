@@ -233,8 +233,8 @@ class Scene:
             for i, j, k in ti.ndrange(
                 3, NUM_THRESHOLD, int(
                     (max_size + 1) / 2)):
-                bbox_buf[i, j, k] = bbox_field[i, j, k * \
-                    2].union(bbox_field[i, j, k * 2 + 1])
+                bbox_buf[i, j, k] = bbox_field[i, j, k *
+                                               2].union(bbox_field[i, j, k * 2 + 1])
             for i, j in ti.ndrange(3, NUM_THRESHOLD):
                 bbox_buf[i, j, int((max_size + 1) / 2)
                          ] = bbox_field[i, j, max_size - 1]
@@ -432,7 +432,7 @@ class Scene:
                     for i in range(node.prim_left, node.prim_right):
                         gaussian = self.gaussian_field[i]
                         intersections = gaussian.hit(ray)
-                        if intersections.x < ray.end and intersections.y > ray.start:
+                        if intersections.x < ray.end and intersections.x > ray.start:
                             if intersections.x < hit_t:
                                 hit = SceneHit(
                                     gaussian_idx=i, intersections=intersections, depth=node.depth)
