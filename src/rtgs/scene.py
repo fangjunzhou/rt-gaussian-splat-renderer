@@ -16,7 +16,6 @@ from rtgs.ray import Ray
 from rtgs.utils.math import sigmoid
 from rtgs.bvh import BVHNode
 from rtgs.bounding_box import Bound
-from rtgs.utils.types import vec2i
 
 ti.init(arch=ti.gpu)
 
@@ -106,6 +105,8 @@ class Scene:
         rotations = points[["rot_1", "rot_2", "rot_3", "rot_0"]].to_numpy()
         scales = points[["scale_0", "scale_1", "scale_2"]].to_numpy()
         colors = points[["f_dc_0", "f_dc_1", "f_dc_2"]].to_numpy()
+        spherical_harmonics = points[[f"f_rest_{i}" for i in range(45)]] \
+            .to_numpy().reshape((-1, 3, 15))
         opacities = points["opacity"].to_numpy()
         # Convert data with sigmoid.
         scales = sigmoid(scales) * scale
@@ -118,10 +119,12 @@ class Scene:
         sca_field = ti.field(ti.math.vec3, shape=(num_points,))
         col_field = ti.field(ti.math.vec3, shape=(num_points,))
         opa_field = ti.field(ti.f32, shape=(num_points,))
+        sh_field = ti.field(ti.math.vec3, shape=(num_points, 15))
         pos_field.from_numpy(positions)
         rot_field.from_numpy(rotations)
         sca_field.from_numpy(scales)
         col_field.from_numpy(colors)
+        sh_field.from_numpy(spherical_harmonics)
         opa_field.from_numpy(opacities)
 
         # Build Gaussian field.
@@ -137,6 +140,21 @@ class Scene:
                 opacity = opa_field[i]
                 self.gaussian_field[i].init(
                     position, rotation, scale, color, opacity)
+                self.gaussian_field[i].sh_10 = sh_field[i, 0]
+                self.gaussian_field[i].sh_11 = sh_field[i, 1]
+                self.gaussian_field[i].sh_12 = sh_field[i, 2]
+                self.gaussian_field[i].sh_20 = sh_field[i, 3]
+                self.gaussian_field[i].sh_21 = sh_field[i, 4]
+                self.gaussian_field[i].sh_22 = sh_field[i, 5]
+                self.gaussian_field[i].sh_23 = sh_field[i, 6]
+                self.gaussian_field[i].sh_24 = sh_field[i, 7]
+                self.gaussian_field[i].sh_30 = sh_field[i, 8]
+                self.gaussian_field[i].sh_31 = sh_field[i, 9]
+                self.gaussian_field[i].sh_32 = sh_field[i, 10]
+                self.gaussian_field[i].sh_33 = sh_field[i, 11]
+                self.gaussian_field[i].sh_34 = sh_field[i, 12]
+                self.gaussian_field[i].sh_35 = sh_field[i, 13]
+                self.gaussian_field[i].sh_36 = sh_field[i, 14]
 
         build_gaussian()
         logger.info(f"Gaussian field loaded successfully.")
