@@ -60,21 +60,21 @@ def main():
         "--sample",
         help="Render sample rate.",
         type=int,
-        default=16
+        default=1
     )
     argparser.add_argument(
         "-d",
         "--depth",
         help="Render sample depth.",
         type=int,
-        default=4
+        default=16
     )
     argparser.add_argument(
         "-v",
         "--bvh",
         help="BVH size",
         type=int,
-        default=512
+        default=1024
     )
     argparser.add_argument(
         "--scale",
