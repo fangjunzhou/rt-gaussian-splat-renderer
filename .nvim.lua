@@ -9,7 +9,7 @@ require("clipboard-image").setup {
   -- If you're uncertain what to name your field to, you can run `lua print(vim.bo.filetype)`
   -- Missing options from `markdown` field will be replaced by options from `default` field
   markdown = {
-    img_dir = {"resources", "image"}, -- Use table for nested dir (New feature form PR #20)
-    img_dir_txt = "/resources/image",
+    img_dir = {"docs", "source", "_static", "image"}, -- Use table for nested dir (New feature form PR #20)
+    img_dir_txt = "/_static/image",
   }
 }
