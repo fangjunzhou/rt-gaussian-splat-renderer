@@ -99,6 +99,6 @@ class RayTracer:
                 # Update camera ray field.
                 EPS = 1e-8
                 self.camera.cam_ray_field[i, j].start = \
-                    hit.intersections.y + EPS
+                    hit.intersections.x + EPS
             else:
                 self.camera.cam_ray_field[i, j].start = ti.math.inf
