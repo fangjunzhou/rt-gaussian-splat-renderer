@@ -109,7 +109,9 @@ class Scene:
             .to_numpy().reshape((-1, 3, 15))
         opacities = points["opacity"].to_numpy()
         # Convert data with sigmoid.
-        scales = sigmoid(scales) * scale
+        rotations = rotations / \
+            np.linalg.norm(rotations, axis=-1)[:, np.newaxis]
+        scales = np.exp(scales) * scale
         colors = sigmoid(colors)
         opacities = sigmoid(opacities)
 

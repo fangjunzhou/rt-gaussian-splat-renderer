@@ -10,7 +10,7 @@ from rtgs.ray import Ray
 import rtgs.utils.quaternion as quat
 
 
-BOUNDING_THRESHOLD = 1
+BOUNDING_THRESHOLD = 3
 
 
 # Spherical harmonics coefficient.
@@ -118,12 +118,18 @@ class Gaussian:
         ])
 
         # six endpoints of the gaussian
-        p1 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
-        p2 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(1, 0, 0))
-        p3 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
-        p4 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(0, 1, 0))
-        p5 = self.position + rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
-        p6 = self.position - rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, 1))
+        p1 = self.position + \
+            rotation_mat @ (scale_mat @ ti.math.vec3(BOUNDING_THRESHOLD, 0, 0))
+        p2 = self.position - \
+            rotation_mat @ (scale_mat @ ti.math.vec3(BOUNDING_THRESHOLD, 0, 0))
+        p3 = self.position + \
+            rotation_mat @ (scale_mat @ ti.math.vec3(0, BOUNDING_THRESHOLD, 0))
+        p4 = self.position - \
+            rotation_mat @ (scale_mat @ ti.math.vec3(0, BOUNDING_THRESHOLD, 0))
+        p5 = self.position + \
+            rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, BOUNDING_THRESHOLD))
+        p6 = self.position - \
+            rotation_mat @ (scale_mat @ ti.math.vec3(0, 0, BOUNDING_THRESHOLD))
 
         # compute the bounding box for the six points
         min_bound = ti.min(p1, p2, p3, p4, p5, p6)
