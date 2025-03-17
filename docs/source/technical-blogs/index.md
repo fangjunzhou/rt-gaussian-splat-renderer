@@ -5,5 +5,6 @@ Implementation and mathematical details related to the ray tracing Gaussian spla
 ```{toctree}
 coordinate-system
 quaternion
+fast-gpu-parallel-bvh
 spherical-harmonics
 ```

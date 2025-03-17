@@ -4,6 +4,7 @@ A Taichi implementation of [3D Gaussian Splatting for Real-Time Radiance Field R
 
 ```{toctree}
 :maxdepth: 2
+get-started
 technical-blogs/index
 apidocs/index
 ```

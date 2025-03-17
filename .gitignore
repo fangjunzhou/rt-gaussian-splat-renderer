@@ -8,7 +8,7 @@ __pycache__/
 .venv/
 
 # Resources
-resources
+resources/truck
 notebooks/test.ply
 
 # Documentation

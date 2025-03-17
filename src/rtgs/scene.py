@@ -17,8 +17,6 @@ from rtgs.utils.math import sigmoid
 from rtgs.bvh import BVHNode
 from rtgs.bounding_box import Bound
 
-ti.init(arch=ti.gpu)
-
 
 logger = logging.getLogger(__name__)
 
