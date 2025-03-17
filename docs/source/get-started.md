@@ -4,7 +4,7 @@
 
 ### Install uv
 
-You need to [uv](https://docs.astral.sh/uv/) to use this project. Please read the [uv installation documentation](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer) for details.
+You need to install [uv](https://docs.astral.sh/uv/) to use this project. Please read the [uv installation documentation](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer) for details.
 
 ### Clone the Project
 

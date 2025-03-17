@@ -1,6 +1,6 @@
 # RT Gaussian Splat Renderer
 
-![](/resources/image/2025-03-11-15-08-52.png)
+![](/resources/image/2025-03-16-16-17-40.png)
 
 ## Get Started
 
