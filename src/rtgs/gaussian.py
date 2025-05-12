@@ -194,7 +194,7 @@ class Gaussian:
         # Evaluate gaussian
         d = pos - self.position
         cov_inv = ti.math.inverse(self.cov())
-        rho = ti.math.exp(- d.dot(cov_inv @ d))
+        rho = ti.math.exp(- 0.5 * d.dot(cov_inv @ d))
         alpha = self.opacity * rho
         color = self.color
         color += self.eval_sh(ti.math.normalize(dir))
